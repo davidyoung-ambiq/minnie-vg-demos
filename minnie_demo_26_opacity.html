@@ -334,8 +334,7 @@ var Module=typeof Module!="undefined"?Module:{};var ENVIRONMENT_IS_WEB=!!globalT
       });
 
       /* ─── WebGL draw-call interception ─── */
-      function hookGL(canvas) {
-        var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      function hookGL(gl) {
         if (!gl || gl.__perfHooked) return;
         gl.__perfHooked = true;
 
@@ -385,18 +384,20 @@ var Module=typeof Module!="undefined"?Module:{};var ENVIRONMENT_IS_WEB=!!globalT
       function tryHook() {
         var c = document.getElementById('canvas');
         if (c) {
-          /* Emscripten may not have created the context yet.
-             Patch getContext so we intercept on first call. */
           var origGetCtx = c.getContext.bind(c);
+          /* Wrap getContext to intercept Emscripten's GL context creation.
+             Pass the GL context directly to hookGL to avoid re-entrant
+             getContext calls that would cause infinite recursion. */
           c.getContext = function(type, attrs) {
             var ctx = origGetCtx(type, attrs);
             if (ctx && !ctx.__perfHooked && (type.indexOf('webgl') !== -1)) {
-              hookGL(c);
+              hookGL(ctx);
             }
             return ctx;
           };
-          /* Also try hooking immediately if context already exists */
-          hookGL(c);
+          /* Try hooking if context already exists (use unwrapped call) */
+          var existing = origGetCtx('webgl2') || origGetCtx('webgl');
+          hookGL(existing);
         }
       }
       tryHook();
