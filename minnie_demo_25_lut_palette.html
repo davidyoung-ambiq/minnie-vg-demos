@@ -174,6 +174,120 @@ canvas.emscripten { border: 0px none; background-color: black; }
       color: rgba(255,255,255,0.25); pointer-events: none;
     }
 
+
+    /* == HW-Only Feature Overlay == */
+    #hwOverlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 9000;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    }
+    #hwPanel {
+      background: linear-gradient(145deg, rgba(18,18,30,0.96), rgba(12,12,22,0.98));
+      border: 1px solid rgba(255,180,60,0.3);
+      border-radius: 16px;
+      padding: 28px 36px 24px;
+      max-width: 440px;
+      width: 90%;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 60px rgba(255,160,40,0.06);
+      color: #ccc;
+      pointer-events: auto;
+    }
+    #hwBadge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #c44, #a33);
+      color: #fff; font-size: 11px; font-weight: 700;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(200,50,50,0.35);
+    }
+    #hwBadge svg { width: 14px; height: 14px; fill: #fff; flex-shrink: 0; }
+    #hwTitle {
+      font-size: 18px; font-weight: 600; color: #eee;
+      margin: 0 0 4px;
+    }
+    #hwSubtitle {
+      font-size: 12px; color: #888; margin: 0 0 18px;
+    }
+    .hw-diagram {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; margin: 18px 0 20px; flex-wrap: wrap;
+    }
+    .hw-dbox {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px 14px;
+      text-align: center;
+      min-width: 90px;
+    }
+    .hw-dbox-label {
+      font-size: 9px; color: #777; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .hw-dbox-visual {
+      height: 48px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; overflow: hidden;
+    }
+    .hw-arrow {
+      font-size: 22px; color: rgba(255,180,60,0.5); flex-shrink: 0;
+    }
+    .hw-idx-grid {
+      display: grid; grid-template-columns: repeat(4,12px);
+      grid-template-rows: repeat(4,12px); gap: 1px;
+    }
+    .hw-idx-cell {
+      border-radius: 1px; font-size: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.7); font-weight: 600;
+    }
+    .hw-pal-strip {
+      display: flex; flex-direction: column; gap: 2px; width: 52px;
+    }
+    .hw-pal-entry {
+      height: 9px; border-radius: 2px;
+      display: flex; align-items: center; justify-content: flex-end;
+      padding-right: 4px;
+      font-size: 6px; color: rgba(0,0,0,0.5); font-weight: 600;
+    }
+    .hw-out-grid {
+      display: grid; grid-template-columns: repeat(4,12px);
+      grid-template-rows: repeat(4,12px); gap: 1px;
+    }
+    .hw-out-cell { border-radius: 1px; }
+    .hw-benefits {
+      list-style: none; padding: 0; margin: 16px 0 0;
+      font-size: 12px; line-height: 1.7;
+    }
+    .hw-benefits li {
+      padding-left: 22px; position: relative; color: #aaa;
+    }
+    .hw-benefits li::before {
+      content: attr(data-icon);
+      position: absolute; left: 0; top: 0;
+    }
+    .hw-desc {
+      font-size: 12px; color: #888; line-height: 1.6;
+      margin: 14px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .hw-chip-ref {
+      display: inline-block;
+      background: rgba(100,160,255,0.12);
+      color: #8bf;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+    @keyframes hw-pal-cycle {
+      0%, 100% { filter: hue-rotate(0deg); }
+      50%      { filter: hue-rotate(90deg); }
+    }
+    .hw-animate-pal { animation: hw-pal-cycle 4s ease-in-out infinite; }
 </style>
   </head>
   <body>
@@ -231,7 +345,56 @@ canvas.emscripten { border: 0px none; background-color: black; }
     <div class="emscripten_border">
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
     </div>
-    <textarea id="output" rows="8"></textarea>
+    
+    <!-- HW-Only Feature Overlay -->
+    <div id="hwOverlay">
+      <div id="hwPanel">
+        <div id="hwBadge">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          Hardware-Only Feature
+        </div>
+        <h2 id="hwTitle">LUT Palette Paint</h2>
+        <p id="hwSubtitle">NemaVG T16 indexed-color texture format</p>
+
+        <div class="hw-diagram hw-animate-pal">
+          <div class="hw-dbox">
+            <div class="hw-dbox-label">Index Texture</div>
+            <div class="hw-dbox-visual">
+              <div class="hw-idx-grid"><div class="hw-idx-cell" style="background:#334">0</div><div class="hw-idx-cell" style="background:#445">1</div><div class="hw-idx-cell" style="background:#556">2</div><div class="hw-idx-cell" style="background:#667">3</div><div class="hw-idx-cell" style="background:#445">1</div><div class="hw-idx-cell" style="background:#667">3</div><div class="hw-idx-cell" style="background:#334">0</div><div class="hw-idx-cell" style="background:#556">2</div><div class="hw-idx-cell" style="background:#556">2</div><div class="hw-idx-cell" style="background:#334">0</div><div class="hw-idx-cell" style="background:#667">3</div><div class="hw-idx-cell" style="background:#445">1</div><div class="hw-idx-cell" style="background:#667">3</div><div class="hw-idx-cell" style="background:#556">2</div><div class="hw-idx-cell" style="background:#445">1</div><div class="hw-idx-cell" style="background:#334">0</div></div>
+            </div>
+          </div>
+          <div class="hw-arrow">&rarr;</div>
+          <div class="hw-dbox">
+            <div class="hw-dbox-label">Palette (LUT)</div>
+            <div class="hw-dbox-visual">
+              <div class="hw-pal-strip"><div class="hw-pal-entry" style="background:#e74c3c">0</div><div class="hw-pal-entry" style="background:#f39c12">1</div><div class="hw-pal-entry" style="background:#2ecc71">2</div><div class="hw-pal-entry" style="background:#3498db">3</div><div class="hw-pal-entry" style="background:#9b59b6">4</div></div>
+            </div>
+          </div>
+          <div class="hw-arrow">&rarr;</div>
+          <div class="hw-dbox">
+            <div class="hw-dbox-label">Output RGBA</div>
+            <div class="hw-dbox-visual">
+              <div class="hw-out-grid"><div class="hw-out-cell" style="background:#e74c3c"></div><div class="hw-out-cell" style="background:#f39c12"></div><div class="hw-out-cell" style="background:#2ecc71"></div><div class="hw-out-cell" style="background:#3498db"></div><div class="hw-out-cell" style="background:#f39c12"></div><div class="hw-out-cell" style="background:#3498db"></div><div class="hw-out-cell" style="background:#e74c3c"></div><div class="hw-out-cell" style="background:#2ecc71"></div><div class="hw-out-cell" style="background:#2ecc71"></div><div class="hw-out-cell" style="background:#e74c3c"></div><div class="hw-out-cell" style="background:#3498db"></div><div class="hw-out-cell" style="background:#f39c12"></div><div class="hw-out-cell" style="background:#3498db"></div><div class="hw-out-cell" style="background:#2ecc71"></div><div class="hw-out-cell" style="background:#f39c12"></div><div class="hw-out-cell" style="background:#e74c3c"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <ul class="hw-benefits">
+          <li data-icon="&#x1F4BE;">4x memory savings (1 byte/pixel vs 4 RGBA)</li>
+          <li data-icon="&#x1F3A8;">Instant palette animation &mdash; swap LUT, pixels update</li>
+          <li data-icon="&#x26A1;">Zero-cost on GPU &mdash; T16 format decoded in texture unit</li>
+        </ul>
+
+        <div class="hw-desc">
+          The NemaVG GPU natively decodes T16 indexed-color textures in hardware.
+          Each pixel stores an 8-bit index into a 256-entry RGBA color palette,
+          enabling compact asset storage and real-time palette effects.
+          This feature cannot be emulated in ShaderVG software rasterization.
+        </div>
+        <span class="hw-chip-ref">Requires: Apollo4/5 NemaVG GPU &bull; T16 Format</span>
+      </div>
+    </div>
+<textarea id="output" rows="8"></textarea>
 
     <script type='text/javascript'>
       var statusElement = document.getElementById('status');
@@ -684,5 +847,43 @@ var Module=typeof Module!="undefined"?Module:{};var ENVIRONMENT_IS_WEB=!!globalT
     })();
     </script>
 
+
+    <script>
+    /* == HW-Only Feature Overlay JS == */
+    (function() {
+      /* Animate palette cycling on the diagram */
+      var pal = document.querySelector('.hw-animate-pal');
+      if (!pal) return;
+
+      var palettes = [
+        ['#e74c3c','#f39c12','#2ecc71','#3498db','#9b59b6'],
+        ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c77dff'],
+        ['#ff9ff3','#feca57','#48dbfb','#ff6348','#a29bfe'],
+        ['#00cec9','#fd79a8','#fdcb6e','#6c5ce7','#55efc4'],
+      ];
+      var palIdx = 0;
+
+      function cycleColors() {
+        palIdx = (palIdx + 1) % palettes.length;
+        var p = palettes[palIdx];
+
+        /* Update palette strip */
+        var entries = document.querySelectorAll('.hw-pal-entry');
+        entries.forEach(function(el, i) {
+          if (i < p.length) el.style.background = p[i];
+        });
+
+        /* Update output grid */
+        var idxCells = document.querySelectorAll('.hw-idx-cell');
+        var outCells = document.querySelectorAll('.hw-out-cell');
+        outCells.forEach(function(el, i) {
+          var idx = parseInt(idxCells[i].textContent);
+          el.style.background = p[idx];
+        });
+      }
+
+      setInterval(cycleColors, 2000);
+    })();
+    </script>
 </body>
 </html>
