@@ -174,6 +174,103 @@ canvas.emscripten { border: 0px none; background-color: black; }
       color: rgba(255,255,255,0.25); pointer-events: none;
     }
 
+
+    /* ---- Keybinding Legend ---- */
+    #kbHintBar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10002;
+      background: rgba(0,0,0,0.75);
+      color: rgba(255,255,255,0.7);
+      font-family: 'Consolas','Monaco','Courier New',monospace;
+      font-size: 11px;
+      line-height: 1;
+      padding: 5px 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      pointer-events: none;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      transition: opacity 0.4s;
+    }
+    #kbHintBar.faded { opacity: 0.25; }
+    #kbHintBar .kb-key {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-weight: bold;
+      color: #fff;
+      margin-right: 3px;
+      font-size: 10px;
+    }
+    #kbHelpPanel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10003;
+      background: rgba(10,10,20,0.94);
+      color: #e0e0e0;
+      font-family: 'Consolas','Monaco','Courier New',monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 18px 24px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      min-width: 320px;
+      max-width: 420px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: none;
+      pointer-events: auto;
+    }
+    #kbHelpPanel.visible { display: block; }
+    #kbHelpPanel h3 {
+      margin: 0 0 10px 0;
+      color: #8cf;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 6px;
+    }
+    #kbHelpPanel .help-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+    #kbHelpPanel .help-key {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 3px;
+      padding: 1px 7px;
+      font-weight: bold;
+      color: #fff;
+      font-size: 11px;
+      min-width: 24px;
+      text-align: center;
+    }
+    #kbHelpPanel .help-desc { color: #bbb; margin-left: 12px; flex: 1; }
+    #kbHelpPanel .help-section {
+      color: #6f6;
+      font-size: 11px;
+      margin-top: 10px;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    #kbHelpPanel .help-footer {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      color: #666;
+      font-size: 10px;
+      text-align: center;
+    }
 </style>
   </head>
   <body>
@@ -684,5 +781,60 @@ var Module=typeof Module!="undefined"?Module:{};var ENVIRONMENT_IS_WEB=!!globalT
     })();
     </script>
 
+
+    <!-- Keybinding Hint Bar + Help Panel -->
+    <div id="kbHintBar">
+      <span><span class="kb-key">P</span> Perf HUD</span>
+      <span><span class="kb-key">G</span> GPU Graph</span>
+      <span><span class="kb-key">H</span> Help</span>
+    </div>
+    <div id="kbHelpPanel">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="help-section">Performance Overlays</div>
+      <div class="help-row"><span class="help-key">P</span><span class="help-desc">Toggle JS Performance HUD v2 (top-right)</span></div>
+      <div class="help-row"><span class="help-key">G</span><span class="help-desc">Toggle GPU timing graph</span></div>
+      <div class="help-section">Help</div>
+      <div class="help-row"><span class="help-key">H</span><span class="help-desc">Show / hide this help panel</span></div>
+      <div class="help-section">Info</div>
+      <div class="help-row" style="display:block;color:#888;font-size:11px;padding:4px 0;">
+        The native MinnieVG Performance HUD (bottom of canvas) is always visible.<br>
+        It displays FPS, frame time, VBO stats, and a frame-time mini-graph rendered<br>
+        directly as MinnieVG geometry.
+      </div>
+      <div class="help-footer">Press <span style="color:#fff">H</span> to close</div>
+    </div>
+
+    <script>
+    /* ---- Keybinding Legend ---- */
+    (function(){
+      'use strict';
+      var hintBar = document.getElementById('kbHintBar');
+      var helpPanel = document.getElementById('kbHelpPanel');
+      var fadeTimer = null;
+      function startFade() {
+        clearTimeout(fadeTimer);
+        hintBar.classList.remove('faded');
+        fadeTimer = setTimeout(function(){ hintBar.classList.add('faded'); }, 6000);
+      }
+      startFade();
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'h' || e.key === 'H') {
+          helpPanel.classList.toggle('visible');
+          startFade();
+          e.preventDefault();
+        }
+        /* Also un-fade hint bar on P or G press */
+        if (e.key === 'p' || e.key === 'P' || e.key === 'g' || e.key === 'G') {
+          startFade();
+        }
+      });
+      /* Click outside help panel to close */
+      document.addEventListener('click', function(e) {
+        if (helpPanel.classList.contains('visible') && !helpPanel.contains(e.target)) {
+          helpPanel.classList.remove('visible');
+        }
+      });
+    })();
+    </script>
 </body>
 </html>
