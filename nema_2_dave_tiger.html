@@ -385,11 +385,10 @@
         var origGetCtx = c.getContext.bind(c);
         c.getContext = function(type, attrs) {
           var ctx = origGetCtx(type, attrs);
-          if (ctx && !ctx.__perfHooked2 && type.indexOf('webgl') !== -1) hookGL(ctx);
+          if (ctx && !ctx.__perfHooked2 && type.indexOf('webgl') !== -1) { hookGL(ctx); _gl = ctx; }
           return ctx;
         };
-        var existing = origGetCtx('webgl2') || origGetCtx('webgl');
-        hookGL(existing);
+        /* Context will be hooked lazily via the getContext wrapper above */
       }
       tryHook();
 
@@ -418,10 +417,12 @@
       var _gl = null;
       function getGL() {
         if (_gl) return _gl;
+        /* Don't call getContext here - it would create a premature context
+           if called before Emscripten init. The wrapper caches _gl. */
         var c = document.getElementById('canvas');
         if (!c) return null;
-        var origGetCtx = HTMLCanvasElement.prototype.getContext.bind(c);
-        _gl = origGetCtx('webgl2') || origGetCtx('webgl');
+        /* Try the cached context (safe: returns existing, never creates new) */
+        _gl = c.__glCtx || null;
         return _gl;
       }
 
