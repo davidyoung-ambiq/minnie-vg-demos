@@ -125,6 +125,83 @@ canvas.emscripten { border: 0px none; background-color: black; }
     </div>
     <textarea id="output" rows="8"></textarea>
 
+    <!-- Code Reference Panel -->
+    <div id="code-refs" style="
+      margin: 12px auto; max-width: 820px; padding: 10px 16px;
+      background: #1a1a2e; color: #c8ccd4; border: 1px solid #333;
+      border-radius: 6px; font-family: 'Consolas','Courier New',monospace; font-size: 13px;
+    ">
+      <div style="margin-bottom: 8px; font-weight: bold; color: #e5c07b; font-size: 14px;">
+        &#128196; Source Code References
+        <span style="font-weight:normal; color:#888; font-size:12px; margin-left:8px;">(click to open in VS Code)</span>
+      </div>
+      <table style="width:100%; border-collapse:collapse; color:#c8ccd4;">
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:4px 8px; color:#61afef;">
+            <a href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_32_gradient_fill_bench.c:1"
+               style="color:#61afef; text-decoration:none;" title="Demo source — 32-colour palette, 5 ring layers, benchmark loop">
+              &#x1F4C4; minnie_demo_32_gradient_fill_bench.c
+            </a>
+          </td>
+          <td style="padding:4px 8px; color:#888; font-size:12px;">Demo source — palette, ring layers, benchmark loop</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:4px 8px; color:#61afef;">
+            <a href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_common.h:414"
+               style="color:#61afef; text-decoration:none;" title="mdemo_draw_arc() — ring tessellation via MinnieVG paths">
+              &#x1F527; minnie_demo_common.h:414
+            </a>
+          </td>
+          <td style="padding:4px 8px; color:#888; font-size:12px;">mdemo_draw_arc() — ring tessellation via MinnieVG</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:4px 8px; color:#61afef;">
+            <a href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_common.h:473"
+               style="color:#61afef; text-decoration:none;" title="mdemo_draw_text() — ShaderVG font rendering">
+              &#x1F527; minnie_demo_common.h:473
+            </a>
+          </td>
+          <td style="padding:4px 8px; color:#888; font-size:12px;">mdemo_draw_text() — ShaderVG bitmap font rendering</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:4px 8px; color:#61afef;">
+            <a href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tks/minnie/shadervg/shadervg.cpp:5144"
+               style="color:#61afef; text-decoration:none;" title="BeginDraw() — VBO allocation and scratch buffer management">
+              &#x2699; shadervg.cpp:5144
+            </a>
+          </td>
+          <td style="padding:4px 8px; color:#888; font-size:12px;">BeginDraw() — VBO allocation &amp; scratch buffer</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:4px 8px; color:#61afef;">
+            <a href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tks/minnie/minnie_exec.h:39"
+               style="color:#61afef; text-decoration:none;" title="minExecDrawListEx() — draw list dispatch to ShaderVG shaders">
+              &#x2699; minnie_exec.h:39
+            </a>
+          </td>
+          <td style="padding:4px 8px; color:#888; font-size:12px;">minExecDrawListEx() — draw list dispatch</td>
+        </tr>
+        <tr style="border-bottom:1px solid #333;">
+          <td style="padding:4px 8px; color:#61afef;">
+            <a href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw/demos/platform/web/platform.mk:1"
+               style="color:#61afef; text-decoration:none;" title="Emscripten build rules — WebGL2, standalone single-file">
+              &#x1F6E0; platform.mk
+            </a>
+          </td>
+          <td style="padding:4px 8px; color:#888; font-size:12px;">Emscripten build — WebGL2, standalone single-file</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 8px; color:#61afef;">
+            <a href="vscode://file/c:/cygwin64/home/DavidYoung/projects/doc/consolidated_documentation.html:5581"
+               style="color:#61afef; text-decoration:none;" title="Consolidated documentation — G1 Gradient Fill Benchmark section">
+              &#x1F4D6; consolidated_documentation.html:5581
+            </a>
+          </td>
+          <td style="padding:4px 8px; color:#888; font-size:12px;">Documentation — G1 Gradient Fill Benchmark</td>
+        </tr>
+      </table>
+    </div>
+
     <script type='text/javascript'>
       var statusElement = document.getElementById('status');
       var progressElement = document.getElementById('progress');
