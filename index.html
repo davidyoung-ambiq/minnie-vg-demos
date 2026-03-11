@@ -84,9 +84,10 @@
   <h1>🎨 MinnieVG WebGL Demo Gallery</h1>
   <p>Interactive WebGL builds of all MinnieVG demo sections. Click any demo to run it directly in your browser.</p>
   <div class="stats">
-    <div class="stat"><div class="stat-num">34</div><div class="stat-label">Section Demos</div></div>
-    <div class="stat"><div class="stat-num">10</div><div class="stat-label">Standalone Demos</div></div>
-    <div class="stat"><div class="stat-num">44</div><div class="stat-label">Total HTML Files</div></div>
+    <div class="stat"><div class="stat-num">34</div><div class="stat-label">MinnieVG Demos</div></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-label">OpenGL ES Demos</div></div>
+    <div class="stat"><div class="stat-num">282</div><div class="stat-label">GLES 3.0 Tests</div></div>
+    <div class="stat"><div class="stat-num">45</div><div class="stat-label">Total HTML Files</div></div>
   </div>
 </div>
 
@@ -457,6 +458,50 @@
     <p>Anti-aliasing quality showcase</p>
     <a class="card-link" href="nema_2_dave_aa_showcase.html">Run Demo</a>
     <a class="jira-link" href="https://ambiqmicro.atlassian.net/browse/CARSW-329">CARSW-329</a>
+  </div>
+</div>
+
+<!-- ─── egles_test Gallery (C++ / GLES 3.0) ────────────── -->
+<h2 class="section-title" style="margin-top:3rem">egles_test Gallery <span class="badge" style="background:#e94560">C++ / GLES 3.0</span></h2>
+<p style="color:var(--dim);margin-bottom:1rem">
+  Comprehensive GPU test suite compiled to WebGL 2.0 via Emscripten.
+  282 interactive demos (21 Shadertoy effects + 261 native C++ GLES 3.0 tests) in a single app
+  with a built-in test selector dropdown. Covers textures, shaders, z-buffer, stencil, MSAA,
+  blending, transform feedback, cubemaps, mipmap, line rendering, and MinnieVG integration tests.
+</p>
+<div class="grid">
+  <div class="card" style="border-color:#e94560">
+    <span class="card-num" style="color:#e94560;background:rgba(233,69,96,0.1)">Interactive Gallery</span>
+    <h3>egles_test — Full Test Suite</h3>
+    <p>All 282 GPU tests in one app. Use the dropdown selector at the top to switch between tests. Includes Shadertoy procedural effects (raymarching, fractals, water caustics, etc.) and native GLES 3.0 visual tests.</p>
+    <a class="card-link" style="color:#e94560" href="egles_test.html">Launch Gallery</a>
+  </div>
+</div>
+<p style="color:var(--dim);margin-top:1rem;font-size:0.85rem"><strong>Test categories include:</strong></p>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-top:0.5rem">
+  <div class="card" style="padding:0.75rem 1rem">
+    <h3 style="font-size:0.9rem;margin:0">🎨 Shadertoy Effects</h3>
+    <p style="font-size:0.8rem">21 procedural fragment shaders — raymarching, fractals, water, noise</p>
+  </div>
+  <div class="card" style="padding:0.75rem 1rem">
+    <h3 style="font-size:0.9rem;margin:0">🧊 3D Rendering</h3>
+    <p style="font-size:0.8rem">Textured cubes, z-buffer, bump mapping, cubemaps, terrain</p>
+  </div>
+  <div class="card" style="padding:0.75rem 1rem">
+    <h3 style="font-size:0.9rem;margin:0">🖼️ Textures</h3>
+    <p style="font-size:0.8rem">RGBA8, RGB565, A8, R32F, 3D textures, mipmaps, samplers</p>
+  </div>
+  <div class="card" style="padding:0.75rem 1rem">
+    <h3 style="font-size:0.9rem;margin:0">✂️ Stencil &amp; Scissor</h3>
+    <p style="font-size:0.8rem">Stencil outlines, shadows, separated stencil, scissor clipping</p>
+  </div>
+  <div class="card" style="padding:0.75rem 1rem">
+    <h3 style="font-size:0.9rem;margin:0">📊 Benchmarks</h3>
+    <p style="font-size:0.8rem">Triangle throughput, ALU speed, vertex shading, fill rate, primitive speed</p>
+  </div>
+  <div class="card" style="padding:0.75rem 1rem">
+    <h3 style="font-size:0.9rem;margin:0">🔷 MinnieVG Integration</h3>
+    <p style="font-size:0.8rem">Tiger SVG, edge AA, draw lists — MinnieVG rendered via GLES 3.0</p>
   </div>
 </div>
 
