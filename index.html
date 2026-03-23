@@ -87,7 +87,8 @@
     <div class="stat"><div class="stat-num">34</div><div class="stat-label">MinnieVG Demos</div></div>
     <div class="stat"><div class="stat-num">10</div><div class="stat-label">OpenGL ES Demos</div></div>
     <div class="stat"><div class="stat-num">282</div><div class="stat-label">GLES 3.0 Tests</div></div>
-    <div class="stat"><div class="stat-num">45</div><div class="stat-label">Total HTML Files</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">3D Bunny Benchmarks</div></div>
+    <div class="stat"><div class="stat-num">49</div><div class="stat-label">Total HTML Files</div></div>
   </div>
 </div>
 
@@ -366,8 +367,15 @@
   <div class="card">
     <span class="card-num">Demo 32</span>
     <h3>Gradient Fill Bench</h3>
-    <p>32-colour palette, 5 concentric ring layers with distinct gradient slices. Measures arcs/sec vs Apollo 5 (1,700). Ambiq logo composited.</p>
+    <p>Original Garmin-style blue arc benchmark. Single colour, single ring layer. Measures arcs/sec vs Apollo 5 reference (1,700).</p>
     <a class="card-link" href="minnie_demo_32_gradient_fill_bench.html">Run Demo</a>
+    <a class="jira-link" href="https://ambiqmicro.atlassian.net/browse/CARSW-302">CARSW-302</a>
+  </div>
+  <div class="card">
+    <span class="card-num">Demo 32b</span>
+    <h3>Gradient Fill Bench — Color</h3>
+    <p>Enhanced colour version: 32-colour thematic palette, 5 concentric ring layers with distinct gradient slices. Ambiq logo composited in centre.</p>
+    <a class="card-link" href="minnie_demo_32b_gradient_fill_bench_color.html">Run Demo</a>
     <a class="jira-link" href="https://ambiqmicro.atlassian.net/browse/CARSW-302">CARSW-302</a>
   </div>
   <div class="card">
@@ -458,6 +466,37 @@
     <p>Anti-aliasing quality showcase</p>
     <a class="card-link" href="nema_2_dave_aa_showcase.html">Run Demo</a>
     <a class="jira-link" href="https://ambiqmicro.atlassian.net/browse/CARSW-329">CARSW-329</a>
+  </div>
+</div>
+
+<!-- ─── 3D Bunny Benchmarks ─────────────────────────────── -->
+<h2 class="section-title" style="margin-top:3rem">3D Bunny Benchmarks <span class="badge" style="background:var(--orange)">CARSW-353/354/355</span></h2>
+<p style="color:var(--dim);margin-bottom:1rem">
+  Stanford Bunny benchmark suite for the D/AVE NX GPU evaluation. Three progressively complex shading passes
+  using the same GLES 3.0 shaders that will run on TES D/AVE NX FPGA hardware.
+  <a href="bunny_benchmarks.html" style="color:var(--accent);text-decoration:none;font-weight:600">View full gallery page &rarr;</a>
+</p>
+<div class="grid">
+  <div class="card">
+    <span class="card-num" style="color:var(--orange);background:rgba(210,153,34,0.1)">B1 — Z-Buffer</span>
+    <h3>Golden Bunny</h3>
+    <p>Z-buffered rendering with 512&times;512 normal map, diffuse + specular (pow-8) lighting. 700v / 1,146t.</p>
+    <a class="card-link" style="color:var(--orange)" href="bunny074_bench.html">Run Demo</a>
+    <a class="jira-link" href="https://ambiqmicro.atlassian.net/browse/CARSW-353">CARSW-353</a>
+  </div>
+  <div class="card">
+    <span class="card-num" style="color:var(--accent3);background:rgba(210,168,255,0.1)">B2 — Reflective</span>
+    <h3>Environment-Mapped Bunny</h3>
+    <p>Sphere-map environment reflections with per-fragment normal transform. 700v / 1,146t, 2 textures.</p>
+    <a class="card-link" style="color:var(--accent3)" href="bunny098_bench.html">Run Demo</a>
+    <a class="jira-link" href="https://ambiqmicro.atlassian.net/browse/CARSW-354">CARSW-354</a>
+  </div>
+  <div class="card">
+    <span class="card-num" style="color:#f0883e;background:rgba(240,136,62,0.1)">B3 — PBR / SSS</span>
+    <h3>PBR Subsurface Bunny</h3>
+    <p>Full PBR: diffuse + specular (pow-24), subsurface scattering, AO, orbiting point light. 1,582v / 2,729t.</p>
+    <a class="card-link" style="color:#f0883e" href="bunny186_bench.html">Run Demo</a>
+    <a class="jira-link" href="https://ambiqmicro.atlassian.net/browse/CARSW-355">CARSW-355</a>
   </div>
 </div>
 

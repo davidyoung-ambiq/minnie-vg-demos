@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Bunny Benchmark Gallery — D/AVE NX WebGL 2.0</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #c9d1d9; --heading: #f0f6fc; --accent: #58a6ff;
+    --accent2: #3fb950; --accent3: #d2a8ff; --dim: #8b949e;
+    --orange: #d29922; --warm: #f0883e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1025 0%, #0d1117 50%, #0a1628 100%);
+    border-bottom: 1px solid var(--border); padding: 2.5rem 0; text-align: center;
+  }
+  .header h1 { color: var(--heading); font-size: 2.2rem; margin-bottom: 0.5rem; }
+  .header p { color: var(--dim); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+  .stats {
+    display: flex; justify-content: center; gap: 2rem; margin-top: 1.5rem; flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem 1.5rem; text-align: center;
+  }
+  .stat-num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.85rem; color: var(--dim); }
+  .stat-num.orange { color: var(--orange); }
+  .stat-num.green  { color: var(--accent2); }
+  .stat-num.purple { color: var(--accent3); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .intro {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.5rem; margin-bottom: 2rem;
+  }
+  .intro h2 { color: var(--heading); font-size: 1.2rem; margin-bottom: 0.5rem; }
+  .intro p { font-size: 0.95rem; color: var(--dim); margin-bottom: 0.5rem; }
+  .intro code { background: rgba(88,166,255,0.1); color: var(--accent); padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem; margin-top: 1.5rem;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.5rem; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    display: flex; flex-direction: column;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .card-badge {
+    font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 4px;
+    display: inline-block; margin-bottom: 0.75rem; width: fit-content;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-b1 { color: var(--orange); background: rgba(210,153,34,0.15); }
+  .badge-b2 { color: var(--accent3); background: rgba(210,168,255,0.15); }
+  .badge-b3 { color: var(--warm); background: rgba(240,136,62,0.15); }
+  .card h3 { color: var(--heading); font-size: 1.15rem; margin-bottom: 0.5rem; }
+  .card p { font-size: 0.9rem; color: var(--dim); flex: 1; margin-bottom: 0.75rem; }
+  .card-meta {
+    font-size: 0.8rem; color: var(--dim); border-top: 1px solid var(--border);
+    padding-top: 0.75rem; margin-top: 0.5rem;
+  }
+  .card-meta span { display: inline-block; margin-right: 1rem; }
+  .card-meta .val { color: var(--text); font-weight: 600; }
+  .card-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+  .btn {
+    display: inline-block; padding: 0.5rem 1.2rem; border-radius: 6px;
+    text-decoration: none; font-weight: 600; font-size: 0.9rem;
+    transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+  .tech-table {
+    width: 100%; border-collapse: collapse; margin-top: 1.5rem;
+    font-size: 0.9rem;
+  }
+  .tech-table th, .tech-table td {
+    padding: 0.6rem 1rem; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .tech-table th { color: var(--heading); font-weight: 600; background: var(--surface); }
+  .tech-table td { color: var(--text); }
+  .tech-table tr:hover td { background: rgba(88,166,255,0.05); }
+  .section-title {
+    color: var(--heading); font-size: 1.3rem; margin: 2.5rem 0 0.5rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+  }
+  .note {
+    background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3);
+    border-radius: 6px; padding: 1rem; margin: 1.5rem 0; font-size: 0.9rem;
+  }
+  .note strong { color: var(--orange); }
+  .footer {
+    text-align: center; padding: 2rem; color: var(--dim); font-size: 0.85rem;
+    border-top: 1px solid var(--border); margin-top: 3rem;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+  @media (max-width: 700px) {
+    .grid { grid-template-columns: 1fr; }
+    .stats { gap: 1rem; }
+    .card-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>&#x1F430; 3D Bunny Benchmark Gallery</h1>
+  <p>Interactive WebGL 2.0 builds of the D/AVE NX Stanford Bunny benchmark suite.
+     These demos run in your browser using the same GLES 3.0 shaders
+     that execute on the TES D/AVE NX GPU.</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num orange">3</div><div class="stat-label">Benchmarks</div></div>
+    <div class="stat"><div class="stat-num green">WebGL 2.0</div><div class="stat-label">Graphics API</div></div>
+    <div class="stat"><div class="stat-num purple">GLES 3.0</div><div class="stat-label">Shader Version</div></div>
+    <div class="stat"><div class="stat-num">4,575</div><div class="stat-label">Total Triangles</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="intro">
+  <h2>About These Demos</h2>
+  <p>Each benchmark renders the Stanford Bunny model with progressively more complex shading.
+     The same GLSL ES 3.00 shaders used here will execute on the TES D/AVE NX programmable GPU
+     via FPGA eval kit, enabling direct visual and performance comparison against the
+     NemaGFX/NemaP CPU-projected approach on Apollo 510 EVB.</p>
+  <p>All demos are self-contained single-file HTML — no server required. Open directly in any modern browser with WebGL 2.0 support.</p>
+</div>
+
+<!-- ─── Demo Cards ───────────────────────────────────── -->
+<h2 class="section-title">Benchmark Demos</h2>
+<div class="grid">
+
+  <!-- B1 -->
+  <div class="card">
+    <span class="card-badge badge-b1">B1 — Z-Buffer</span>
+    <h3>Golden Bunny with Normal-Map Lighting</h3>
+    <p>Hardware Z-buffered rendering with a 512&times;512 normal map for per-pixel lighting.
+       Golden tint via analytical specular (pow-8) and diffuse shading in a teal environment.</p>
+    <div class="card-meta">
+      <span>Mesh: <span class="val">700v / 1,146t</span></span>
+      <span>Textures: <span class="val">1&times; normal map</span></span>
+    </div>
+    <div class="card-actions">
+      <a class="btn btn-primary" href="bunny074_bench.html">&#x25B6; Run Demo</a>
+      <a class="btn btn-secondary" href="https://ambiqmicro.atlassian.net/browse/CARSW-353" target="_blank">CARSW-353</a>
+    </div>
+  </div>
+
+  <!-- B2 -->
+  <div class="card">
+    <span class="card-badge badge-b2">B2 — Reflective</span>
+    <h3>Environment-Mapped Reflective Bunny</h3>
+    <p>Sphere-map environment reflections with per-fragment normal decoding.
+       View vector reflected through transformed normal, then sphere-map sampled for chrome-like appearance.</p>
+    <div class="card-meta">
+      <span>Mesh: <span class="val">700v / 1,146t</span></span>
+      <span>Textures: <span class="val">normal + envmap</span></span>
+    </div>
+    <div class="card-actions">
+      <a class="btn btn-primary" href="bunny098_bench.html">&#x25B6; Run Demo</a>
+      <a class="btn btn-secondary" href="https://ambiqmicro.atlassian.net/browse/CARSW-354" target="_blank">CARSW-354</a>
+    </div>
+  </div>
+
+  <!-- B3 -->
+  <div class="card">
+    <span class="card-badge badge-b3">B3 — PBR / SSS</span>
+    <h3>Multi-Light PBR with Subsurface Scattering</h3>
+    <p>High-resolution bunny with physically-based rendering: diffuse + specular (pow-24),
+       subsurface scattering, ambient occlusion, distance attenuation, and orbiting point light.</p>
+    <div class="card-meta">
+      <span>Mesh: <span class="val">1,582v / 2,729t</span></span>
+      <span>Textures: <span class="val">normals + additional</span></span>
+    </div>
+    <div class="card-actions">
+      <a class="btn btn-primary" href="bunny186_bench.html">&#x25B6; Run Demo</a>
+      <a class="btn btn-secondary" href="https://ambiqmicro.atlassian.net/browse/CARSW-355" target="_blank">CARSW-355</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── Technical Comparison Table ────────────────────── -->
+<h2 class="section-title">Benchmark Comparison</h2>
+<table class="tech-table">
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>B1 Z-Buffer</th>
+      <th>B2 Reflective</th>
+      <th>B3 PBR / SSS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Test origin</td><td>test074</td><td>test098</td><td>test186</td></tr>
+    <tr><td>Vertices</td><td>700</td><td>700</td><td>1,582</td></tr>
+    <tr><td>Triangles</td><td>1,146</td><td>1,146</td><td>2,729</td></tr>
+    <tr><td>Vertex shader</td><td>mat4 transform</td><td>mat4 + view position</td><td>mat4 + point light</td></tr>
+    <tr><td>Fragment lighting</td><td>Diffuse + specular</td><td>Sphere-map reflection</td><td>PBR + SSS + AO</td></tr>
+    <tr><td>Specular model</td><td>pow-8 analytical</td><td>Environment reflection</td><td>pow-24 + distance atten.</td></tr>
+    <tr><td>Textures</td><td>1 (normal map)</td><td>2 (normal + envmap)</td><td>2 (normals + additional)</td></tr>
+    <tr><td>Depth buffer</td><td>16-bit Z</td><td>16-bit Z</td><td>16-bit Z</td></tr>
+    <tr><td>MSAA (hardware)</td><td>4&times;</td><td>4&times;</td><td>4&times;</td></tr>
+    <tr><td>Extra effects</td><td>AO scale</td><td>—</td><td>SSS, orbiting light</td></tr>
+    <tr><td>Jira ticket</td><td>CARSW-353</td><td>CARSW-354</td><td>CARSW-355</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>&#x26A0; Note:</strong> These WebGL demos run the <em>same GLSL shaders</em> as the D/AVE NX FPGA benchmarks,
+  but execute on your computer's GPU rather than the embedded TES D/AVE NX hardware.
+  Performance numbers in the browser are <strong>not</strong> comparable to embedded hardware measurements.
+  For the NemaGFX CPU-projected baseline, see CARSW-356 (measured 31.46 ms/frame on Apollo 510 EVB).
+</div>
+
+<!-- ─── CPU Bunny Reference ──────────────────────────── -->
+<h2 class="section-title">CPU Bunny Baseline (Reference)</h2>
+<div class="intro">
+  <h2>CARSW-356 — NemaGFX CPU-Projected Bunny</h2>
+  <p>For comparison, the NemaGFX/NemaP path on Apollo 510 EVB uses CPU software transform + sort
+     with <code>nema_fill_triangle_f()</code> for GPU-accelerated flat-shaded triangle fill.
+     No programmable shaders, no Z-buffer, no per-pixel lighting — painter's algorithm only.</p>
+  <p><strong>Measured:</strong> 31.46 ms/frame (31.8 FPS, 36,431 tris/sec) — 700 verts, 1,146 tris, 454&times;454 RGBA8888.</p>
+</div>
+
+</div>
+
+<div class="footer">
+  <p>3D Bunny Benchmark Gallery &mdash; Ambiq &middot; D/AVE NX GPU Evaluation &middot; March 2026</p>
+  <p><a href="index.html">&larr; Back to MinnieVG Gallery</a></p>
+</div>
+
+</body>
+</html>
