@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VG Trace Viewer</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #151821;
+    --panel2: #1b1f2a;
+    --border: #262b38;
+    --fg: #d7dae0;
+    --fg2: #8b93a5;
+    --accent: #4da3ff;
+    --cl: #4da3ff;        /* nema_cl_*      blue   */
+    --paint: #56c679;     /* paint / grad   green  */
+    --path: #e6a23c;      /* path           orange */
+    --draw: #ef5454;      /* draw_*         red    */
+    --state: #b368d9;     /* set_blend/rule purple */
+    --marker: #7a8292;    /* BENCH markers  grey   */
+    --bench: #2dd4bf;     /* test/batch     teal   */
+    --match: #2d3446;
+    --diff-add: rgba(86,198,121,0.18);
+    --diff-del: rgba(239,84,84,0.18);
+    --diff-delta: rgba(77,163,255,0.14);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--fg);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  #app { display: grid; grid-template-rows: auto auto 1fr auto; height: 100vh; }
+  header { padding: 8px 14px; background: var(--panel);
+    border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; color: var(--fg); }
+  header .meta { color: var(--fg2); font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  header button, header select, header input[type=text], header input[type=number] {
+    background: var(--panel2); color: var(--fg);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 4px 8px; font: inherit; }
+  header button { cursor: pointer; }
+  header button:hover { background: #252a38; }
+  header button.primary { background: var(--accent); color: #001426; border-color: transparent; }
+  header input[type=text] { min-width: 220px; }
+  header label { color: var(--fg2); font-size: 12px; }
+  header .group { display: flex; gap: 4px; align-items: center; }
+  header .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+  #toolbar2 { padding: 6px 14px; background: var(--panel2);
+    border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    font-size: 12px; color: var(--fg2); }
+  #toolbar2 .chip { display: inline-flex; align-items: center; gap: 4px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 2px 8px; cursor: pointer; user-select: none; }
+  #toolbar2 .chip.off { opacity: 0.4; }
+  #toolbar2 .chip .sw { width: 8px; height: 8px; border-radius: 50%; background: var(--fg2); }
+
+  #main { overflow: hidden; display: grid; grid-template-columns: 1fr; }
+  #main.diff { grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+  .pane { overflow: auto; background: var(--bg); padding: 0; }
+  .pane .hdrinfo { padding: 8px 14px; background: var(--panel);
+    border-bottom: 1px solid var(--border); font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--fg2); }
+  .pane .hdrinfo b { color: var(--fg); }
+
+  ul.tree { list-style: none; margin: 0; padding: 4px 0 40px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+  ul.tree ul { list-style: none; margin: 0; padding-left: 16px; border-left: 1px dotted var(--border); }
+  li.node { padding: 0; }
+  .row { display: grid; grid-template-columns: 14px 10px auto 1fr auto; gap: 6px;
+    align-items: center; padding: 1px 8px; border-radius: 3px; cursor: default;
+    white-space: nowrap; }
+  .row:hover { background: var(--panel); }
+  .row.selected { background: #24304a; }
+  .row.match-filter { background: rgba(77,163,255,0.10); }
+  .row .tri { width: 14px; color: var(--fg2); cursor: pointer; text-align: center; user-select: none; }
+  .row .tri.leaf { color: transparent; cursor: default; }
+  .row .chip { width: 8px; height: 8px; border-radius: 2px; display: inline-block; background: var(--marker); }
+  .row.c-cl  .chip { background: var(--cl); }
+  .row.c-paint .chip { background: var(--paint); }
+  .row.c-path  .chip { background: var(--path); }
+  .row.c-draw  .chip { background: var(--draw); }
+  .row.c-state .chip { background: var(--state); }
+  .row.c-marker .chip { background: var(--marker); }
+  .row.c-bench  .chip { background: var(--bench); }
+  .row .label { overflow: hidden; text-overflow: ellipsis; }
+  .row .label b { color: var(--fg); }
+  .row .label .args { color: var(--fg2); }
+  .row .label .burst { color: var(--fg); font-weight: 600; }
+  .row .stats { color: var(--fg2); font-size: 11px; }
+  .row .bar { position: relative; height: 4px; background: var(--border); border-radius: 2px;
+    min-width: 60px; max-width: 160px; margin-left: 8px; overflow: hidden; }
+  .row .bar > span { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); opacity: 0.7; }
+  .row.c-cl    .bar > span { background: var(--cl); }
+  .row.c-paint .bar > span { background: var(--paint); }
+  .row.c-path  .bar > span { background: var(--path); }
+  .row.c-draw  .bar > span { background: var(--draw); }
+  .row.c-state .bar > span { background: var(--state); }
+  .row.c-bench .bar > span { background: var(--bench); }
+  .row.d-add { background: var(--diff-add); }
+  .row.d-del { background: var(--diff-del); }
+  .row.d-delta { background: var(--diff-delta); }
+  .row.hidden { display: none; }
+
+  #dropOverlay { position: fixed; inset: 0; background: rgba(77,163,255,0.10);
+    border: 3px dashed var(--accent); display: none; align-items: center; justify-content: center;
+    color: var(--accent); font-size: 24px; pointer-events: none; z-index: 9999; }
+  #dropOverlay.on { display: flex; }
+  .empty { padding: 40px; color: var(--fg2); text-align: center; }
+  .empty h2 { color: var(--fg); font-weight: 500; }
+  .empty .drop-zones { display: flex; gap: 16px; justify-content: center; margin-top: 20px; }
+  .empty .drop-zone { border: 2px dashed var(--border); border-radius: 8px;
+    padding: 28px 40px; cursor: pointer; }
+  .empty .drop-zone:hover { border-color: var(--accent); color: var(--fg); }
+
+  footer { padding: 4px 14px; background: var(--panel);
+    border-top: 1px solid var(--border); font-size: 11px; color: var(--fg2);
+    font-family: ui-monospace, Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>VG Trace Viewer</h1>
+    <div class="group">
+      <button id="btnLoadA">Load A…</button>
+      <button id="btnLoadB">Compare B…</button>
+      <button id="btnSample">Load sample</button>
+      <button id="btnClear">Clear</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <label>Unit</label>
+      <select id="unit">
+        <option value="auto">auto</option>
+        <option value="cycles">cycles</option>
+        <option value="us">µs</option>
+      </select>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <label>Filter</label>
+      <input type="text" id="filter" placeholder="substring (name, args, hex)">
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <label>Auto-collapse ≥</label>
+      <input type="number" id="threshold" min="1" max="10000" value="8" style="width:66px">
+      <button id="btnExpAll">Expand all</button>
+      <button id="btnColAll">Collapse all</button>
+      <button id="btnExpL1">L1</button>
+      <button id="btnExpL2">L2</button>
+      <button id="btnExpL3">L3</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button id="btnExpJson">Export JSON</button>
+      <button id="btnExpCsv">Export CSV</button>
+    </div>
+    <input type="file" id="fileA" accept=".bin" style="display:none">
+    <input type="file" id="fileB" accept=".bin" style="display:none">
+  </header>
+
+  <div id="toolbar2">
+    <span id="apiChips"></span>
+    <span class="sep" style="width:1px; height:16px; background:var(--border); display:inline-block;"></span>
+    <span id="diffSummary"></span>
+  </div>
+
+  <div id="main">
+    <div class="pane" id="paneA">
+      <div class="empty">
+        <h2>Drag a .bin trace file here</h2>
+        <p>or use <b>Load A…</b> / <b>Load sample</b> above.</p>
+        <p style="color:var(--fg2)">Format: 32 B header + N × 32 B records (magic <code>0x56475452</code>).</p>
+      </div>
+    </div>
+    <div class="pane" id="paneB" style="display:none"></div>
+  </div>
+
+  <footer id="status">ready</footer>
+</div>
+<div id="dropOverlay">Drop .bin trace file to load</div>
+
+<script>
+/* ========================================================================
+ * VG Trace Viewer - single-file, no deps.
+ * Binary format:  8 x u32 header + N x (u32 cycle | u16 api | u16 n | 6 x u32 args)
+ * ======================================================================== */
+
+"use strict";
+
+const MAGIC    = 0x56475452;   // 'VGTR'
+const SENTINEL = 0xDEADBEEF;
+
+// --- API definitions -----------------------------------------------------
+// Each entry: {name, klass, argDefs}
+// argDefs entries: {label, type}
+//   type: 'u32' | 'i32' | 'f32' | 'ptr' | 'hex' | 'enum:<map>'
+// ------------------------------------------------------------------------
+const ENUMS = {
+  fillRule: {0:"NON_ZERO", 1:"EVEN_ODD"},
+};
+
+const API_DEFS = {};
+function D(id, name, klass, argDefs) { API_DEFS[id] = {name, klass, argDefs}; }
+
+// nema core (0x010 - 0x02F) -- blue ------------------------------------
+D(0x010, "nema_cl_create_sized",           "cl",  [["size_bytes","u32"]]);
+D(0x011, "nema_cl_bind",                   "cl",  [["cl","ptr"]]);
+D(0x012, "nema_cl_bind_circular",          "cl",  [["cl","ptr"]]);
+D(0x013, "nema_cl_bind_sectored_circular", "cl",  [["cl","ptr"],["sectors","u32"]]);
+D(0x014, "nema_cl_rewind",                 "cl",  [["cl","ptr"]]);
+D(0x015, "nema_cl_submit",                 "cl",  [["cl","ptr"]]);
+D(0x016, "nema_cl_wait",                   "cl",  [["cl","ptr"]]);
+D(0x017, "nema_cl_destroy",                "cl",  [["cl","ptr"]]);
+D(0x018, "nema_bind_dst_tex",              "cl",  [["phys","hex"],["w","u32"],["h","u32"],["fmt","u32"],["stride","u32"]]);
+D(0x019, "nema_set_clip",                  "cl",  [["x","i32"],["y","i32"],["w","u32"],["h","u32"]]);
+D(0x01A, "nema_clear",                     "cl",  [["rgba","hex"]]);
+// nema_vg (0x030 - 0x07F) --------------------------------------------
+D(0x030, "nema_vg_init",                   "state",  [["w","u32"],["h","u32"]]);
+D(0x031, "nema_vg_deinit",                 "state",  []);
+D(0x032, "nema_vg_set_blend",              "state",  [["blend","hex"]]);
+D(0x033, "nema_vg_set_fill_rule",          "state",  [["rule","enum:fillRule"]]);
+D(0x034, "nema_vg_set_quality",            "state",  [["quality","u32"]]);
+D(0x040, "nema_vg_path_create",            "path",   [["->handle","ptr"]]);
+D(0x041, "nema_vg_path_destroy",           "path",   [["path","ptr"]]);
+D(0x042, "nema_vg_path_set_shape",         "path",   [["path","ptr"],["n_segs","u32"],["segs","ptr"],["n_data","u32"],["data","ptr"]]);
+D(0x043, "nema_vg_path_set_matrix",        "path",   [["path","ptr"],["m","ptr"],["sx","f32"],["sy","f32"],["tx","f32"],["ty","f32"]]);
+D(0x044, "nema_vg_path_clear_matrix",      "path",   [["path","ptr"]]);
+D(0x050, "nema_vg_paint_create",           "paint",  [["->handle","ptr"]]);
+D(0x051, "nema_vg_paint_destroy",          "paint",  [["paint","ptr"]]);
+D(0x052, "nema_vg_paint_set_type",         "paint",  [["paint","ptr"],["type","u32"]]);
+D(0x053, "nema_vg_paint_set_paint_color",  "paint",  [["paint","ptr"],["rgba","hex"]]);
+D(0x054, "nema_vg_paint_set_grad_linear",  "paint",  [["paint","ptr"],["grad","ptr"],["x0","f32"],["y0","f32"],["x1","f32"],["y1","f32"]]);
+D(0x055, "nema_vg_paint_set_grad_radial",  "paint",  [["paint","ptr"],["grad","ptr"],["cx","f32"],["cy","f32"],["r","f32"]]);
+D(0x056, "nema_vg_paint_set_grad_conic",   "paint",  [["paint","ptr"],["grad","ptr"],["cx","f32"],["cy","f32"],["a","f32"]]);
+D(0x057, "nema_vg_paint_set_stroke_width", "paint",  [["paint","ptr"],["w","f32"]]);
+D(0x060, "nema_vg_grad_create",            "paint",  [["->handle","ptr"]]);
+D(0x061, "nema_vg_grad_destroy",           "paint",  [["grad","ptr"]]);
+D(0x062, "nema_vg_grad_set",               "paint",  [["grad","ptr"],["n_stops","u32"]]);
+D(0x070, "nema_vg_draw_path",              "draw",   [["path","ptr"],["paint","ptr"]]);
+D(0x071, "nema_vg_draw_line",              "draw",   [["x0","f32"],["y0","f32"],["x1","f32"],["y1","f32"],["paint","ptr"]]);
+D(0x072, "nema_vg_draw_ring",              "draw",   [["cx","f32"],["cy","f32"],["r","f32"],["a0","f32"],["a1","f32"],["paint","ptr"]]);
+D(0x073, "nema_vg_draw_rect",              "draw",   [["x","f32"],["y","f32"],["w","f32"],["h","f32"],["paint","ptr"]]);
+D(0x074, "nema_vg_draw_circle",            "draw",   [["cx","f32"],["cy","f32"],["r","f32"],["paint","ptr"]]);
+D(0x075, "nema_vg_draw_ellipse",           "draw",   [["cx","f32"],["cy","f32"],["rx","f32"],["ry","f32"],["paint","ptr"]]);
+// bench markers ----------------------------------------------------------
+D(0x0F0, "BENCH_TEST_BEGIN",               "bench",  [["test_idx","u32"]]);
+D(0x0F1, "BENCH_TEST_END",                 "bench",  [["test_idx","u32"]]);
+D(0x0F2, "BENCH_BATCH_BEGIN",              "bench",  [["batch_idx","u32"]]);
+D(0x0F3, "BENCH_BATCH_END",                "bench",  [["batch_idx","u32"]]);
+// MinnieVG (0x100 - 0x1FF) -- orange/green ------------------------------
+// ShaderVG  (0x200 - 0x2FF) -- reserved ----------------------------------
+
+function apiDef(id) {
+  return API_DEFS[id] || {name: `unknown_0x${id.toString(16).padStart(3,"0")}`, klass:"marker", argDefs:[]};
+}
+function apiClass(id) {
+  return apiDef(id).klass;
+}
+
+// bit-cast u32 -> f32
+const _bc = new ArrayBuffer(4);
+const _bcU = new Uint32Array(_bc);
+const _bcF = new Float32Array(_bc);
+function u2f(u) { _bcU[0] = u >>> 0; return _bcF[0]; }
+function hex32(u) { return "0x" + (u>>>0).toString(16).padStart(8,"0"); }
+function fmtFloat(f) {
+  if (!isFinite(f)) return String(f);
+  if (f === 0) return "0";
+  const abs = Math.abs(f);
+  if (abs >= 1e6 || abs < 1e-3) return f.toExponential(3);
+  return f.toFixed(Math.max(1, 4 - Math.floor(Math.log10(abs||1))));
+}
+
+function formatArg(u32, def) {
+  const [label, type] = def;
+  let v;
+  switch(type) {
+    case "f32": v = fmtFloat(u2f(u32)); break;
+    case "ptr": v = hex32(u32); break;
+    case "hex": v = hex32(u32); break;
+    case "i32": v = ((u32|0)).toString(); break;
+    case "u32": v = (u32>>>0).toString(); break;
+    default:
+      if (type && type.startsWith("enum:")) {
+        const m = ENUMS[type.slice(5)] || {};
+        v = (m[u32] || u32.toString());
+      } else v = (u32>>>0).toString();
+  }
+  return `${label}=${v}`;
+}
+
+function formatArgs(rec) {
+  const def = apiDef(rec.api);
+  const parts = [];
+  for (let j = 0; j < rec.n && j < 6; j++) {
+    const dj = def.argDefs[j] || [`a${j}`, "u32"];
+    parts.push(formatArg(rec.args[j], dj));
+  }
+  return parts.join(", ");
+}
+
+// ------------------------------------------------------------------------
+// parseTrace(ArrayBuffer) -> {header, records[]}
+// ------------------------------------------------------------------------
+function parseTrace(buf) {
+  const dv = new DataView(buf);
+  if (buf.byteLength < 32) throw new Error("file too small");
+  const hdr = {
+    magic:    dv.getUint32(0, true),
+    version:  dv.getUint32(4, true),
+    n_records:dv.getUint32(8, true),
+    head:     dv.getUint32(12, true),
+    overflow: dv.getUint32(16, true),
+    rec_size: dv.getUint32(20, true),
+    sentinel: dv.getUint32(24, true),
+    reserved: dv.getUint32(28, true),
+  };
+  if (hdr.magic !== MAGIC) throw new Error(`bad magic 0x${hdr.magic.toString(16)} (expected 0x56475452)`);
+  if (hdr.rec_size !== 32) throw new Error(`bad record size ${hdr.rec_size}`);
+  const records = [];
+  const count = Math.min(hdr.head, hdr.n_records);
+  for (let i = 0; i < count; i++) {
+    const off = 32 + i*32;
+    if (off + 32 > buf.byteLength) break;
+    const cycle = dv.getUint32(off, true);
+    const api   = dv.getUint16(off+4, true);
+    const n     = dv.getUint16(off+6, true);
+    const args = new Array(6);
+    for (let j = 0; j < 6; j++) args[j] = dv.getUint32(off+8+j*4, true);
+    records.push({seq:i, cycle, api, n, args});
+  }
+  // unit inference: heuristic -- avg delta > 50 => cycles, else us
+  let unit = "cycles";
+  if (records.length >= 2) {
+    let total = 0;
+    for (let i = 1; i < Math.min(200, records.length); i++) total += (records[i].cycle - records[i-1].cycle) | 0;
+    const avg = total / Math.min(199, records.length-1);
+    if (avg < 50 && avg > 0) unit = "us";
+  }
+  return {header: hdr, records, unitInferred: unit};
+}
+
+// ------------------------------------------------------------------------
+// Hierarchy builder.
+// Root -> Phase -> Batch -> Group -> Leaf
+// ------------------------------------------------------------------------
+function newNode(kind, label, klass) {
+  return {kind, label, klass: klass || "marker",
+          children: [], leaves: 0, t0: null, t1: null,
+          burstId: null, burstCount: 0, burstStats: null,
+          recIdx: -1};
+}
+
+// Group detectors: classify run of recs into a group kind.
+// Returns group kind or null (=leaf).
+function groupKindFor(api) {
+  // Command list: 0x014..0x016 (rewind/submit/wait) span
+  // Paint setup:  0x050..0x06F
+  // Path build:   0x040..0x04F
+  // Draw burst:   0x070..0x07F
+  const k = apiClass(api);
+  if (k === "draw") return "draw";
+  if (k === "paint") return "paint";
+  if (k === "path" && api !== 0x070) return "path";
+  if (api >= 0x014 && api <= 0x01A) return "cl";
+  if (k === "state") return "state";
+  return null;
+}
+
+function buildTree(records) {
+  const root = newNode("root", "Run", "marker");
+  let phase = null, batch = null, group = null;
+
+  const openPhase = (rec) => {
+    phase = newNode("phase", `Test ${rec.args[0]}`, "bench");
+    phase.t0 = rec.cycle; phase.recIdx = rec.seq;
+    root.children.push(phase);
+    batch = null; group = null;
+  };
+  const closePhase = (rec) => {
+    if (phase) phase.t1 = rec.cycle;
+    phase = null; batch = null; group = null;
+  };
+  const openBatch = (rec) => {
+    batch = newNode("batch", `Batch ${rec.args[0]}`, "bench");
+    batch.t0 = rec.cycle; batch.recIdx = rec.seq;
+    (phase || root).children.push(batch);
+    group = null;
+  };
+  const closeBatch = (rec) => {
+    if (batch) batch.t1 = rec.cycle;
+    batch = null; group = null;
+  };
+  const closeGroup = (tEnd) => {
+    if (group) group.t1 = tEnd;
+    group = null;
+  };
+
+  // ensure an Init phase for any records before the first TEST_BEGIN
+  let init = null;
+  const emitInto = (rec) => {
+    if (!phase && !init) {
+      init = newNode("phase", "Init", "bench");
+      init.t0 = rec.cycle; init.recIdx = rec.seq;
+      root.children.push(init);
+    }
+    const parent = phase || init;
+    if (!batch) { // synthesize a default batch so groups can be under something
+      batch = newNode("batch", "(pre-batch)", "bench");
+      batch.t0 = rec.cycle; batch.recIdx = rec.seq;
+      parent.children.push(batch);
+    }
+    return batch;
+  };
+
+  for (let i = 0; i < records.length; i++) {
+    const rec = records[i];
+    switch(rec.api) {
+      case 0x0F0: // TEST_BEGIN
+        closeGroup(rec.cycle);
+        closeBatch(rec);
+        closePhase(rec);
+        openPhase(rec);
+        continue;
+      case 0x0F1: // TEST_END
+        closeGroup(rec.cycle);
+        closeBatch(rec);
+        if (phase) { phase.t1 = rec.cycle; phase = null; }
+        continue;
+      case 0x0F2: // BATCH_BEGIN
+        closeGroup(rec.cycle);
+        closeBatch(rec);
+        if (!phase && !init) {
+          init = newNode("phase","Init","bench");
+          init.t0 = rec.cycle; root.children.push(init);
+        }
+        batch = newNode("batch", `Batch ${rec.args[0]}`, "bench");
+        batch.t0 = rec.cycle; batch.recIdx = rec.seq;
+        (phase || init).children.push(batch);
+        group = null;
+        continue;
+      case 0x0F3: // BATCH_END
+        closeGroup(rec.cycle);
+        closeBatch(rec);
+        continue;
+    }
+
+    const parent = emitInto(rec);
+    const gk = groupKindFor(rec.api);
+
+    if (gk) {
+      if (group && group.groupKind === gk) {
+        // extend
+      } else {
+        closeGroup(rec.cycle);
+        group = newNode("group", gk, apiClass(rec.api));
+        group.groupKind = gk;
+        group.t0 = rec.cycle; group.recIdx = rec.seq;
+        parent.children.push(group);
+      }
+      // leaf inside group
+      const leaf = {kind:"leaf", rec, klass: apiClass(rec.api), t0: rec.cycle, t1: rec.cycle};
+      group.children.push(leaf);
+      group.leaves++;
+    } else {
+      closeGroup(rec.cycle);
+      const leaf = {kind:"leaf", rec, klass: apiClass(rec.api), t0: rec.cycle, t1: rec.cycle};
+      parent.children.push(leaf);
+    }
+  }
+  // close trailing
+  if (records.length) {
+    const last = records[records.length-1].cycle;
+    closeGroup(last);
+    if (batch && batch.t1 === null) batch.t1 = last;
+    if (phase && phase.t1 === null) phase.t1 = last;
+    if (init && init.t1 === null) init.t1 = last;
+  }
+
+  // Fill t1 for bursts with a sensible end, compute durations
+  if (records.length) {
+    root.t0 = records[0].cycle;
+    root.t1 = records[records.length-1].cycle;
+  }
+  finalizeTree(root);
+
+  // Decorate burst groups with "N x api_name"
+  decorateGroups(root);
+  return root;
+}
+
+function finalizeTree(node) {
+  if (!node) return;
+  if (node.kind === "leaf") return;
+  for (const c of node.children) finalizeTree(c);
+  // t1 = max child t1 if still null
+  if (node.t1 === null && node.children.length) {
+    let m = null;
+    for (const c of node.children) if (c.t1 != null) m = (m==null || c.t1 > m) ? c.t1 : m;
+    node.t1 = m;
+  }
+  node.duration = (node.t1 != null && node.t0 != null) ? (node.t1 - node.t0) : 0;
+  if (node.duration < 0) node.duration = 0;
+}
+
+function decorateGroups(node) {
+  if (!node || node.kind === "leaf") return;
+  for (const c of node.children) decorateGroups(c);
+  if (node.kind === "group") {
+    // Count unique APIs in children leaves
+    const counts = new Map();
+    for (const ch of node.children) {
+      if (ch.kind === "leaf") {
+        const id = ch.rec.api;
+        counts.set(id, (counts.get(id) || 0) + 1);
+      }
+    }
+    if (counts.size === 1) {
+      const [id, n] = counts.entries().next().value;
+      node.label = `${n} × ${apiDef(id).name}`;
+    } else {
+      const label = {cl:"Command list", paint:"Paint setup", path:"Path construction",
+                     draw:"Draw burst", state:"State"}[node.groupKind] || node.groupKind;
+      node.label = `${label} (${node.children.length})`;
+    }
+    node.leaves = node.children.length;
+  } else if (node.kind === "phase" || node.kind === "batch") {
+    // Count leaves transitively
+    let total = 0;
+    (function walk(x){ if (x.kind === "leaf") total++;
+      else for (const c of x.children) walk(c); })(node);
+    node.leaves = total;
+  }
+}
+
+// ------------------------------------------------------------------------
+// Rendering
+// ------------------------------------------------------------------------
+const state = {
+  a: null,  // {header, records, tree, buf, name, unit}
+  b: null,
+  unitOverride: "auto",
+  threshold: 8,
+  filter: "",
+  apiMask: null, // Set<number> disabled api ids
+};
+
+function unitOf(trace) {
+  if (state.unitOverride !== "auto") return state.unitOverride;
+  return trace.unitInferred;
+}
+function unitSuffix(u) { return u === "us" ? "µs" : "cyc"; }
+function fmtTime(n, u) {
+  if (n == null) return "-";
+  if (u === "us") {
+    if (n < 1000) return n.toFixed(1) + "µs";
+    if (n < 1000000) return (n/1000).toFixed(2) + "ms";
+    return (n/1000000).toFixed(3) + "s";
+  }
+  if (n < 1000) return n + "";
+  if (n < 1000000) return (n/1000).toFixed(2) + "k";
+  if (n < 1000000000) return (n/1000000).toFixed(2) + "M";
+  return (n/1000000000).toFixed(2) + "G";
+}
+
+function renderPane(paneEl, trace) {
+  paneEl.innerHTML = "";
+  if (!trace) {
+    paneEl.innerHTML = `<div class="empty"><h2>Drag a .bin here</h2></div>`;
+    return;
+  }
+  const h = trace.header;
+  const u = unitOf(trace);
+  const hdr = document.createElement("div");
+  hdr.className = "hdrinfo";
+  hdr.innerHTML =
+    `<b>${trace.name || "trace"}</b> · ` +
+    `magic=<b>${h.magic===MAGIC?"valid":"INVALID"}</b> ` +
+    `version=${h.version} ` +
+    `n_records=${h.n_records} ` +
+    `head=<b>${h.head}</b> ` +
+    `overflow=<b>${h.overflow}</b> ` +
+    `sentinel=<b>${h.sentinel===SENTINEL?"done":"incomplete"}</b> ` +
+    `unit=<b>${u}</b>`;
+  paneEl.appendChild(hdr);
+
+  const ul = document.createElement("ul");
+  ul.className = "tree";
+  paneEl.appendChild(ul);
+  for (const child of trace.tree.children) {
+    ul.appendChild(renderNode(child, trace, 1, trace.tree.duration || 1));
+  }
+}
+
+function renderNode(node, trace, level, parentDur) {
+  const li = document.createElement("li");
+  li.className = "node";
+  li.dataset.kind = node.kind;
+
+  const row = document.createElement("div");
+  row.className = "row c-" + (node.klass || "marker");
+  const tri = document.createElement("span");
+  tri.className = "tri";
+  tri.textContent = "▸";
+
+  const chip = document.createElement("span");
+  chip.className = "chip";
+
+  const lbl = document.createElement("span");
+  lbl.className = "label";
+
+  const stats = document.createElement("span");
+  stats.className = "stats";
+
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  const barFill = document.createElement("span");
+  bar.appendChild(barFill);
+
+  row.appendChild(tri); row.appendChild(chip); row.appendChild(lbl);
+  row.appendChild(stats); row.appendChild(bar);
+  li.appendChild(row);
+
+  const u = unitOf(trace);
+
+  if (node.kind === "leaf") {
+    tri.classList.add("leaf");
+    tri.textContent = "";
+    const d = apiDef(node.rec.api);
+    lbl.innerHTML = `<b>${d.name}</b><span class="args">(${escapeHTML(formatArgs(node.rec))})</span>`;
+    stats.textContent = `#${node.rec.seq} · ${fmtTime(node.rec.cycle, u)}`;
+    barFill.style.width = "0%";
+  } else {
+    const frac = parentDur > 0 ? (node.duration / parentDur) : 0;
+    barFill.style.width = Math.max(1, Math.min(100, frac * 100)) + "%";
+    let label = node.label;
+    if (node.kind === "group" && node.leaves > 1) {
+      label = `<span class="burst">⊞ ${node.label}</span>`;
+    } else {
+      label = `<b>${escapeHTML(label)}</b>`;
+    }
+    lbl.innerHTML = label;
+    stats.textContent = `${node.leaves || node.children.length} · ${fmtTime(node.duration, u)} · ${(parentDur>0 ? (100*node.duration/parentDur).toFixed(1) : "-")}%`;
+
+    // Expanded state
+    const initial = shouldAutoExpand(node, state.threshold);
+    li._expanded = initial;
+    if (initial) { tri.textContent = "▾"; }
+
+    const kids = document.createElement("ul");
+    kids.style.display = initial ? "" : "none";
+    li.appendChild(kids);
+
+    // Lazy render kids when expanded
+    if (initial) {
+      for (const c of node.children) kids.appendChild(renderNode(c, trace, level+1, node.duration || 1));
+    }
+
+    const toggle = (e) => {
+      e.stopPropagation();
+      li._expanded = !li._expanded;
+      if (li._expanded) {
+        if (!kids.children.length) {
+          for (const c of node.children) kids.appendChild(renderNode(c, trace, level+1, node.duration || 1));
+        }
+        kids.style.display = "";
+        tri.textContent = "▾";
+      } else {
+        kids.style.display = "none";
+        tri.textContent = "▸";
+      }
+    };
+    tri.addEventListener("click", toggle);
+    row.addEventListener("dblclick", toggle);
+  }
+
+  row._node = node;
+  return li;
+}
+
+function shouldAutoExpand(node, threshold) {
+  if (node.kind === "phase") return true;
+  if (node.kind === "batch") return true;
+  if (node.kind === "group") {
+    // Collapse a burst when size >= threshold
+    return node.leaves < threshold;
+  }
+  return false;
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+// ------------------------------------------------------------------------
+// Filtering (text + api chips)
+// ------------------------------------------------------------------------
+function applyFilters() {
+  const q = state.filter.toLowerCase().trim();
+  const mask = state.apiMask;
+  for (const paneId of ["paneA","paneB"]) {
+    const pane = document.getElementById(paneId);
+    const rows = pane.querySelectorAll(".row");
+    // Clear old state
+    rows.forEach(r => { r.classList.remove("match-filter","hidden"); });
+    if (!q && !mask) continue;
+    // First pass: mark matches bottom-up by walking DOM
+    const tree = pane.querySelector("ul.tree");
+    if (!tree) continue;
+    walkDomMark(tree, q, mask);
+  }
+}
+
+function walkDomMark(ul, q, mask) {
+  // returns true if any leaf in subtree matched
+  let anyMatch = false;
+  for (const li of ul.children) {
+    const row = li.querySelector(":scope > .row");
+    const node = row._node;
+    const subUl = li.querySelector(":scope > ul");
+    let selfMatch = false;
+    if (node.kind === "leaf") {
+      const d = apiDef(node.rec.api);
+      if (mask && mask.has(node.rec.api)) { row.classList.add("hidden"); continue; }
+      if (q) {
+        const hay = (d.name + " " + formatArgs(node.rec) + " " +
+          node.rec.args.map(hex32).join(" ")).toLowerCase();
+        selfMatch = hay.includes(q);
+        if (!selfMatch) row.classList.add("hidden");
+        else row.classList.add("match-filter");
+      }
+    } else {
+      // descend into expanded children; if collapsed, we still need to search
+      const wasExpanded = li._expanded;
+      if (!wasExpanded && q) {
+        // force-expand to search
+        const tri = row.querySelector(".tri");
+        tri.click();
+      }
+      const subAny = subUl ? walkDomMark(subUl, q, mask) : false;
+      if (q && !subAny) row.classList.add("hidden");
+      selfMatch = subAny;
+    }
+    if (selfMatch) anyMatch = true;
+  }
+  return anyMatch;
+}
+
+// ------------------------------------------------------------------------
+// API chip bar
+// ------------------------------------------------------------------------
+function buildApiChips() {
+  const chipEl = document.getElementById("apiChips");
+  chipEl.innerHTML = "";
+  const counts = new Map();
+  for (const tr of [state.a, state.b]) {
+    if (!tr) continue;
+    for (const r of tr.records) counts.set(r.api, (counts.get(r.api)||0) + 1);
+  }
+  if (counts.size === 0) return;
+  const ids = [...counts.keys()].sort((a,b)=> a-b);
+  state.apiMask = state.apiMask || new Set();
+  for (const id of ids) {
+    const c = counts.get(id);
+    const d = apiDef(id);
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    if (state.apiMask.has(id)) chip.classList.add("off");
+    chip.title = `0x${id.toString(16).padStart(3,"0")}`;
+    chip.innerHTML = `<span class="sw" style="background:var(--${d.klass})"></span>${d.name} <span style="opacity:0.6">${c}</span>`;
+    chip.addEventListener("click", () => {
+      if (state.apiMask.has(id)) state.apiMask.delete(id);
+      else state.apiMask.add(id);
+      chip.classList.toggle("off");
+      applyFilters();
+    });
+    chipEl.appendChild(chip);
+  }
+}
+
+// ------------------------------------------------------------------------
+// Loading
+// ------------------------------------------------------------------------
+async function loadFile(file, which) {
+  const buf = await file.arrayBuffer();
+  loadBuffer(buf, file.name, which);
+}
+
+function loadBuffer(buf, name, which) {
+  try {
+    const parsed = parseTrace(buf);
+    parsed.tree = buildTree(parsed.records);
+    parsed.name = name;
+    parsed.buf = buf;
+    state[which] = parsed;
+    renderAll();
+    status(`loaded ${name} · ${parsed.records.length} records · unit=${unitOf(parsed)}`);
+  } catch (e) {
+    console.error(e);
+    status("ERROR: " + e.message);
+    alert("Parse failed: " + e.message);
+  }
+}
+
+function renderAll() {
+  const paneA = document.getElementById("paneA");
+  const paneB = document.getElementById("paneB");
+  const main = document.getElementById("main");
+  if (state.b) {
+    main.classList.add("diff");
+    paneB.style.display = "";
+  } else {
+    main.classList.remove("diff");
+    paneB.style.display = "none";
+  }
+  renderPane(paneA, state.a);
+  if (state.b) {
+    renderPane(paneB, state.b);
+    renderDiff();
+  } else {
+    document.getElementById("diffSummary").textContent = "";
+  }
+  buildApiChips();
+  applyFilters();
+  // sync scroll when in diff mode
+  syncScroll();
+}
+
+function status(msg) { document.getElementById("status").textContent = msg; }
+
+// ------------------------------------------------------------------------
+// Diff mode: Myers on (api + first-arg) keys
+// ------------------------------------------------------------------------
+function diffKey(rec) {
+  return (rec.api << 16) ^ (rec.args[0] >>> 0);
+}
+
+function myersDiff(a, b) {
+  // a, b are arrays of keys
+  const N = a.length, M = b.length, MAX = N + M;
+  const V = new Map(); V.set(1, 0);
+  const trace = [];
+  for (let d = 0; d <= MAX; d++) {
+    const Vd = new Map(); for (const [k,v] of V) Vd.set(k,v); trace.push(Vd);
+    for (let k = -d; k <= d; k += 2) {
+      let x;
+      if (k === -d || (k !== d && (V.get(k-1)||0) < (V.get(k+1)||0))) {
+        x = V.get(k+1) || 0;
+      } else {
+        x = (V.get(k-1) || 0) + 1;
+      }
+      let y = x - k;
+      while (x < N && y < M && a[x] === b[y]) { x++; y++; }
+      V.set(k, x);
+      if (x >= N && y >= M) {
+        // backtrack
+        const ops = [];
+        let xx = N, yy = M;
+        for (let dd = trace.length - 1; dd > 0; dd--) {
+          const Vd2 = trace[dd];
+          const kk = xx - yy;
+          let prevK;
+          if (kk === -dd || (kk !== dd && (Vd2.get(kk-1)||0) < (Vd2.get(kk+1)||0))) prevK = kk+1;
+          else prevK = kk-1;
+          const prevX = Vd2.get(prevK) || 0;
+          const prevY = prevX - prevK;
+          while (xx > prevX && yy > prevY) { ops.push(["eq", xx-1, yy-1]); xx--; yy--; }
+          if (dd > 0) {
+            if (xx === prevX) { ops.push(["ins", -1, yy-1]); yy--; }
+            else              { ops.push(["del", xx-1, -1]); xx--; }
+          }
+        }
+        while (xx > 0 && yy > 0) { ops.push(["eq", xx-1, yy-1]); xx--; yy--; }
+        while (xx > 0) { ops.push(["del", xx-1, -1]); xx--; }
+        while (yy > 0) { ops.push(["ins", -1, yy-1]); yy--; }
+        ops.reverse();
+        return ops;
+      }
+    }
+  }
+  return [];
+}
+
+function renderDiff() {
+  if (!state.a || !state.b) return;
+  const A = state.a.records, B = state.b.records;
+  const MAX = 5000;
+  if (A.length > MAX || B.length > MAX) {
+    document.getElementById("diffSummary").textContent =
+      `diff skipped (records > ${MAX}; simple count-compare): A=${A.length} B=${B.length}`;
+    return;
+  }
+  const ka = A.map(diffKey), kb = B.map(diffKey);
+  const ops = myersDiff(ka, kb);
+  let eq=0, del=0, ins=0, sumDelta=0, cnt=0;
+  const deltaA = new Map(), deltaB = new Map(); // seq -> {cls, delta}
+  for (let i = 0; i < ops.length; i++) {
+    const [op,ai,bi] = ops[i];
+    if (op === "eq") {
+      eq++;
+      // compute per-pair delta using cycle gap to previous eq
+      const aR = A[ai], bR = B[bi];
+      if (ai>0 && bi>0) {
+        const da = aR.cycle - A[ai-1].cycle;
+        const db = bR.cycle - B[bi-1].cycle;
+        if (da > 0) {
+          const d = (db - da)/da;
+          if (Math.abs(d) > 0.05) {
+            deltaA.set(ai, {cls:"d-delta", delta:d});
+            deltaB.set(bi, {cls:"d-delta", delta:d});
+          }
+          sumDelta += d; cnt++;
+        }
+      }
+    } else if (op === "del") { del++; deltaA.set(ai, {cls:"d-del"}); }
+    else if (op === "ins")   { ins++; deltaB.set(bi, {cls:"d-ins"}); }
+  }
+  // Apply classes to rendered leaf rows
+  applyDiffClasses("paneA", deltaA, "d-del");
+  applyDiffClasses("paneB", deltaB, "d-add");
+  const mean = cnt ? (100 * sumDelta / cnt).toFixed(1) : "0";
+  document.getElementById("diffSummary").textContent =
+    `diff: matched=${eq}  removed(A-only)=${del}  added(B-only)=${ins}  mean Δ=${mean}%`;
+}
+
+function applyDiffClasses(paneId, map, addCls) {
+  const pane = document.getElementById(paneId);
+  const rows = pane.querySelectorAll(".row");
+  rows.forEach(r => {
+    r.classList.remove("d-add","d-del","d-delta");
+    const n = r._node;
+    if (!n || n.kind !== "leaf") return;
+    const e = map.get(n.rec.seq);
+    if (!e) return;
+    if (e.cls === "d-del") r.classList.add(paneId==="paneA" ? "d-del" : "d-add");
+    else if (e.cls === "d-ins") r.classList.add("d-add");
+    else if (e.cls === "d-delta") r.classList.add("d-delta");
+  });
+}
+
+// ------------------------------------------------------------------------
+// Export
+// ------------------------------------------------------------------------
+function exportJSON() {
+  if (!state.a) return;
+  const payload = {header: state.a.header, records: state.a.records};
+  downloadBlob(JSON.stringify(payload, null, 2), (state.a.name||"trace") + ".json", "application/json");
+}
+function exportCSV() {
+  if (!state.a) return;
+  const rows = [["seq","cycle","api_hex","api","nargs","a0","a1","a2","a3","a4","a5","args_decoded"]];
+  for (const r of state.a.records) {
+    rows.push([r.seq, r.cycle, "0x"+r.api.toString(16).padStart(3,"0"), apiDef(r.api).name, r.n,
+      ...r.args.map(a=>"0x"+a.toString(16).padStart(8,"0")), formatArgs(r)]);
+  }
+  const csv = rows.map(r => r.map(x => {
+    const s = String(x); return s.includes(",")||s.includes("\"") ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(",")).join("\n");
+  downloadBlob(csv, (state.a.name||"trace") + ".csv", "text/csv");
+}
+function downloadBlob(data, name, type) {
+  const blob = new Blob([data], {type});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// ------------------------------------------------------------------------
+// Expand/collapse helpers + scroll sync
+// ------------------------------------------------------------------------
+function forEachPaneRow(fn) {
+  for (const id of ["paneA","paneB"]) {
+    document.querySelectorAll(`#${id} li.node`).forEach(fn);
+  }
+}
+
+function setExpansion(predicate) {
+  forEachPaneRow(li => {
+    const tri = li.querySelector(":scope > .row > .tri");
+    const ul = li.querySelector(":scope > ul");
+    if (!ul || tri.classList.contains("leaf")) return;
+    const node = li.querySelector(":scope > .row")._node;
+    const want = predicate(node);
+    if (want !== !!li._expanded) tri.click();
+  });
+}
+
+function syncScroll() {
+  const a = document.getElementById("paneA");
+  const b = document.getElementById("paneB");
+  let lock = false;
+  const mk = (src, dst) => () => {
+    if (lock) return; lock = true;
+    dst.scrollTop = src.scrollTop;
+    requestAnimationFrame(()=> lock = false);
+  };
+  a.onscroll = state.b ? mk(a,b) : null;
+  b.onscroll = state.b ? mk(b,a) : null;
+}
+
+// ------------------------------------------------------------------------
+// Wire up UI
+// ------------------------------------------------------------------------
+document.getElementById("btnLoadA").onclick = () => document.getElementById("fileA").click();
+document.getElementById("btnLoadB").onclick = () => document.getElementById("fileB").click();
+document.getElementById("fileA").onchange = e => { const f = e.target.files[0]; if (f) loadFile(f, "a"); };
+document.getElementById("fileB").onchange = e => { const f = e.target.files[0]; if (f) loadFile(f, "b"); };
+document.getElementById("btnClear").onclick = () => {
+  state.a = null; state.b = null; state.apiMask = null;
+  renderAll();
+  status("cleared");
+};
+document.getElementById("btnSample").onclick = async () => {
+  // Try to fetch path_halo sample next to the HTML (published mirror scenario)
+  const urls = ["./results/path_halo_trace.bin", "./sample_trace.bin"];
+  for (const u of urls) {
+    try {
+      const r = await fetch(u);
+      if (r.ok) { const buf = await r.arrayBuffer(); loadBuffer(buf, u.split("/").pop(), "a"); return; }
+    } catch {}
+  }
+  alert("No bundled sample found.  Drag a .bin onto the page instead.");
+};
+document.getElementById("unit").onchange = e => {
+  state.unitOverride = e.target.value; renderAll();
+};
+document.getElementById("filter").oninput = e => {
+  state.filter = e.target.value; applyFilters();
+};
+document.getElementById("threshold").oninput = e => {
+  state.threshold = Math.max(1, parseInt(e.target.value)||8);
+  renderAll();
+};
+document.getElementById("btnExpAll").onclick = () => setExpansion(() => true);
+document.getElementById("btnColAll").onclick = () => setExpansion(() => false);
+document.getElementById("btnExpL1").onclick = () => setExpansion(n => n.kind === "root");
+document.getElementById("btnExpL2").onclick = () => setExpansion(n => n.kind === "root" || n.kind === "phase");
+document.getElementById("btnExpL3").onclick = () => setExpansion(n => n.kind !== "group");
+document.getElementById("btnExpJson").onclick = exportJSON;
+document.getElementById("btnExpCsv").onclick = exportCSV;
+
+// Drag-drop
+const overlay = document.getElementById("dropOverlay");
+let dragOverWhich = "a";
+document.addEventListener("dragover", e => {
+  e.preventDefault(); overlay.classList.add("on");
+});
+document.addEventListener("dragleave", e => {
+  if (e.target === document || e.clientX === 0) overlay.classList.remove("on");
+});
+document.addEventListener("drop", async e => {
+  e.preventDefault(); overlay.classList.remove("on");
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  // If dropped on pane B, load as B; else A
+  const which = (e.target.closest && e.target.closest("#paneB")) ? "b" : "a";
+  loadFile(f, which);
+});
+
+// URL params
+(async function(){
+  const p = new URLSearchParams(location.search);
+  const fa = p.get("file") || p.get("file_a");
+  const fb = p.get("file_b");
+  if (fa) try { const r = await fetch(fa); if(r.ok) loadBuffer(await r.arrayBuffer(), fa.split("/").pop(), "a"); } catch(e){ status("fetch A failed: "+e.message); }
+  if (fb) try { const r = await fetch(fb); if(r.ok) loadBuffer(await r.arrayBuffer(), fb.split("/").pop(), "b"); } catch(e){ status("fetch B failed: "+e.message); }
+})();
+
+</script>
+</body>
+</html>
