@@ -107,6 +107,21 @@
     .hljs-meta,.hljs-preprocessor{color:#f38ba8}
     .hljs-variable,.hljs-params{color:#cdd6f4}
     .hljs-operator,.hljs-punctuation{color:#9399b2}
+
+    /* Demo screenshot figures */
+    .demo-shot {
+      margin: 1.25rem 0 1.5rem; text-align: center;
+      background: #1e1e2e; border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px;
+    }
+    .demo-shot img {
+      max-width: 100%; height: auto; display: block; margin: 0 auto;
+      border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .demo-shot figcaption {
+      margin-top: 0.6rem; font-size: 0.875rem; color: var(--muted);
+      font-style: italic;
+    }
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
         integrity="sha384-v2N1VamRGMTjaFbMagHhjrhEOKBRDFNsalF2dM/q0bzlH3hPG1B3BxVFGhMo7mVG"
@@ -435,6 +450,13 @@ compile to direct function calls).</p>
 <!-- ────────────────────────────── 4.1 ────────────────────────────── -->
 <h3 id="web-32">4.1 Demo 32 &mdash; Gradient Fill</h3>
 
+<figure class="demo-shot">
+  <img src="images/garmin/demo32_gradient_fill.png"
+       alt="Demo 32 screenshot: two red-to-green linear gradient arcs">
+  <figcaption>Demo 32 running in Chrome &mdash; 2 arcs, red&nbsp;&rarr;&nbsp;green linear
+    gradient, ~22.8K arcs/sec throughput (Apollo5 ref: 1.7K arcs/sec &rArr; ~13.4&times;).</figcaption>
+</figure>
+
 <p>
   Renders 2 arcs as annular ShaderVG triangle strips that consume the demo's linear
   gradient paint. This is the Apollo5-parity rewrite (April 2026) &mdash; the earlier
@@ -493,6 +515,14 @@ compile to direct function calls).</p>
 <!-- ────────────────────────────── 4.2 ────────────────────────────── -->
 <h3 id="web-33">4.2 Demo 33 &mdash; Line Draw</h3>
 
+<figure class="demo-shot">
+  <img src="images/garmin/demo33_line_draw.png"
+       alt="Demo 33 screenshot: dense tangled polylines in 8 cycling colors">
+  <figcaption>Demo 33 running in Chrome &mdash; 6&nbsp;000 AA-stroked lines/frame across 60
+    batches with 8-color cycling, ~77.5K lines/sec throughput (Apollo5 ref: 20K lines/sec
+    &rArr; ~3.9&times;).</figcaption>
+</figure>
+
 <p>
   60 batches &times; 100 lines = 6&nbsp;000 lines per timed frame. Per-batch color cycling
   from an 8-entry palette. Each line is an AA-stroked <code>sdvg_BeginLineStripAA</code>
@@ -526,6 +556,15 @@ for (int batch = 0; batch < LDB_BATCHES; batch++) {
 
 <!-- ────────────────────────────── 4.3 ────────────────────────────── -->
 <h3 id="web-34">4.3 Demo 34 &mdash; Path Halo</h3>
+
+<figure class="demo-shot">
+  <img src="images/garmin/demo34_path_halo.png"
+       alt="Demo 34 screenshot: blue letterforms H and e with dark halos">
+  <figcaption>Demo 34 running in Chrome &mdash; 4 Garmin letterform paths
+    (<code>pathH</code>, <code>haloPathH</code>, <code>path_e</code>,
+    <code>haloPath_e</code>) rendered via <code>minDrawPath</code>,
+    ~8.1K paths/sec throughput.</figcaption>
+</figure>
 
 <p>
   Uses MinnieVG path API directly. Each of the 4 letterform paths is built by
