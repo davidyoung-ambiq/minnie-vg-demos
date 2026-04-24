@@ -19,6 +19,8 @@
     --state: #b368d9;     /* set_blend/rule purple */
     --marker: #7a8292;    /* BENCH markers  grey   */
     --bench: #2dd4bf;     /* test/batch     teal   */
+    --minnie: #f59e0b;    /* MinnieVG       amber  */
+    --shadervg: #a78bfa;  /* ShaderVG       violet */
     --match: #2d3446;
     --diff-add: rgba(86,198,121,0.18);
     --diff-del: rgba(239,84,84,0.18);
@@ -81,6 +83,8 @@
   .row.c-state .chip { background: var(--state); }
   .row.c-marker .chip { background: var(--marker); }
   .row.c-bench  .chip { background: var(--bench); }
+  .row.c-minnie   .chip { background: var(--minnie); }
+  .row.c-shadervg .chip { background: var(--shadervg); }
   .row .label { overflow: hidden; text-overflow: ellipsis; }
   .row .label b { color: var(--fg); }
   .row .label .args { color: var(--fg2); }
@@ -95,6 +99,8 @@
   .row.c-draw  .bar > span { background: var(--draw); }
   .row.c-state .bar > span { background: var(--state); }
   .row.c-bench .bar > span { background: var(--bench); }
+  .row.c-minnie   .bar > span { background: var(--minnie); }
+  .row.c-shadervg .bar > span { background: var(--shadervg); }
   .row.d-add { background: var(--diff-add); }
   .row.d-del { background: var(--diff-del); }
   .row.d-delta { background: var(--diff-delta); }
@@ -248,8 +254,54 @@ D(0x0F0, "BENCH_TEST_BEGIN",               "bench",  [["test_idx","u32"]]);
 D(0x0F1, "BENCH_TEST_END",                 "bench",  [["test_idx","u32"]]);
 D(0x0F2, "BENCH_BATCH_BEGIN",              "bench",  [["batch_idx","u32"]]);
 D(0x0F3, "BENCH_BATCH_END",                "bench",  [["batch_idx","u32"]]);
-// MinnieVG (0x100 - 0x1FF) -- orange/green ------------------------------
-// ShaderVG  (0x200 - 0x2FF) -- reserved ----------------------------------
+D(0x0F4, "BENCH_FRAME_BEGIN",              "bench",  [["frame","u32"]]);
+D(0x0F5, "BENCH_FRAME_END",                "bench",  [["frame","u32"]]);
+// MinnieVG (web) (0x200 - 0x2FF) -- amber --------------------------------
+D(0x200, "minSeg",                         "minnie", [["numSeg","u32"]]);
+D(0x201, "minMoveTo",                      "minnie", [["x","f32"],["y","f32"]]);
+D(0x202, "minLineTo",                      "minnie", [["x","f32"],["y","f32"]]);
+D(0x203, "minHLineTo",                     "minnie", [["x","f32"]]);
+D(0x204, "minVLineTo",                     "minnie", [["y","f32"]]);
+D(0x205, "minQuadTo",                      "minnie", [["cx","f32"],["cy","f32"],["x","f32"],["y","f32"]]);
+D(0x206, "minCubicTo",                     "minnie", [["c1x","f32"],["c1y","f32"],["c2x","f32"],["c2y","f32"],["x","f32"],["y","f32"]]);
+D(0x207, "minArcTo",                       "minnie", [["rx","f32"],["ry","f32"],["rot","f32"],["large","u32"],["sweep","u32"],["x","f32"]]);
+D(0x208, "minRect",                        "minnie", [["w","f32"],["h","f32"]]);
+D(0x209, "minRoundRect",                   "minnie", [["w","f32"],["h","f32"],["rx","f32"],["ry","f32"]]);
+D(0x20A, "minCircle",                      "minnie", [["r","f32"]]);
+D(0x20B, "minEllipse",                     "minnie", [["rx","f32"],["ry","f32"]]);
+D(0x20C, "minRing",                        "minnie", [["rInner","f32"],["rOuter","f32"]]);
+D(0x220, "minBeginPath",                   "minnie", []);
+D(0x221, "minBeginPathEx",                 "minnie", [["flags","hex"]]);
+D(0x222, "minBeginPathConvex",             "minnie", []);
+D(0x223, "minBeginPathConcave",            "minnie", []);
+D(0x224, "minBeginPathEvenOdd",            "minnie", []);
+D(0x225, "minEndPath",                     "minnie", [["closed","u32"]]);
+D(0x226, "minEndPathOpen",                 "minnie", []);
+D(0x227, "minEndPathClosed",               "minnie", []);
+D(0x228, "minDrawPath",                    "minnie", [["pathId","i32"]]);
+D(0x240, "minColor",                       "minnie", [["argb","hex"]]);
+D(0x241, "minFill",                        "minnie", []);
+D(0x242, "minStroke",                      "minnie", []);
+D(0x243, "minStrokeWidth",                 "minnie", [["w","f32"]]);
+D(0x260, "minBegin",                       "minnie", []);
+D(0x261, "minEnd",                         "minnie", []);
+D(0x262, "minExecDrawListEx",              "minnie", [["flags","hex"]]);
+// ShaderVG (web) (0x300 - 0x3FF) -- violet -------------------------------
+D(0x300, "sdvg_PaintSolid",                "shadervg", []);
+D(0x301, "sdvg_PaintLinear",               "shadervg", []);
+D(0x302, "sdvg_PaintRadial",               "shadervg", []);
+D(0x303, "sdvg_PaintConic",                "shadervg", []);
+D(0x304, "sdvg_PaintPatternAlpha",         "shadervg", []);
+D(0x305, "sdvg_SetColorARGB",              "shadervg", [["argb","hex"]]);
+D(0x306, "sdvg_SetStrokeWidth",            "shadervg", [["w","f32"]]);
+D(0x320, "sdvg_BeginLineStrip",            "shadervg", [["n","u32"]]);
+D(0x321, "sdvg_BeginLineStripAA",          "shadervg", [["n","u32"]]);
+D(0x322, "sdvg_End",                       "shadervg", []);
+D(0x323, "sdvg_Vertex2f",                  "shadervg", [["x","f32"],["y","f32"]]);
+D(0x324, "sdvg_DrawEllipseFillAA",         "shadervg", [["cx","f32"],["cy","f32"],["rx","f32"],["ry","f32"]]);
+D(0x325, "sdvg_DrawEllipseStrokeAA",       "shadervg", [["cx","f32"],["cy","f32"],["rx","f32"],["ry","f32"]]);
+D(0x326, "sdvg_BindTexture2D",             "shadervg", [["tex","u32"]]);
+D(0x327, "sdvg_UnbindVBO",                 "shadervg", []);
 
 function apiDef(id) {
   return API_DEFS[id] || {name: `unknown_0x${id.toString(16).padStart(3,"0")}`, klass:"marker", argDefs:[]};
