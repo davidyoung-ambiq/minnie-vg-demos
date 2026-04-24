@@ -265,7 +265,7 @@
       <td>Gradient Fill</td>
       <td>Arcs/sec</td>
       <td>1.7&nbsp;K</td>
-      <td>8.4&nbsp;K (burst)</td>
+      <td>11.7&nbsp;K (burst)</td>
       <td>16.4&nbsp;K</td>
     </tr>
     <tr>
@@ -273,16 +273,16 @@
       <td>Line Draw</td>
       <td>Lines/sec</td>
       <td>20&nbsp;K</td>
-      <td>TBD</td>
-      <td>~93&nbsp;K</td>
+      <td>896&nbsp;K (burst)</td>
+      <td>~82&nbsp;K</td>
     </tr>
     <tr>
       <td>34</td>
       <td>Path Halo</td>
       <td>Paths/sec</td>
       <td>6&ndash;22&nbsp;K <em>(per path)</em></td>
-      <td>TBD</td>
-      <td>TBD</td>
+      <td>1.7&nbsp;K / 0.9&nbsp;K / 1.6&nbsp;K / 1.0&nbsp;K <em>(H / haloH / e / haloE)</em></td>
+      <td>~8.4&nbsp;K</td>
     </tr>
   </tbody>
 </table>
@@ -799,23 +799,44 @@ mdemo_minnie_end_frame();</code></pre>
     <tr>
       <td>Gradient Fill</td>
       <td>1&nbsp;700 arcs/s</td>
-      <td>~8&nbsp;400 arcs/s <em>(burst)</em></td>
+      <td>11&nbsp;741 arcs/s <em>(burst)</em></td>
       <td><strong>16&nbsp;428 arcs/s</strong></td>
       <td><span class="badge badge-green">9.7&times;</span></td>
     </tr>
     <tr>
       <td>Line Draw</td>
       <td>20&nbsp;000 lines/s</td>
-      <td>TBD</td>
-      <td><strong>~93&nbsp;000 lines/s</strong></td>
-      <td><span class="badge badge-green">4.7&times;</span></td>
+      <td>895&nbsp;985 lines/s <em>(burst)</em></td>
+      <td><strong>~81&nbsp;835 lines/s</strong></td>
+      <td><span class="badge badge-green">4.1&times;</span></td>
     </tr>
     <tr>
       <td>Path Halo (pathH)</td>
       <td>22&nbsp;500 paths/s</td>
-      <td>TBD</td>
-      <td>TBD</td>
-      <td><span class="badge badge-gray">pending</span></td>
+      <td>1&nbsp;702 paths/s <em>(burst)</em></td>
+      <td><strong>~8&nbsp;375 paths/s</strong></td>
+      <td><span class="badge badge-gray">0.37&times;</span></td>
+    </tr>
+    <tr>
+      <td>Path Halo (haloPathH)</td>
+      <td>&mdash;</td>
+      <td>911 paths/s <em>(burst)</em></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Path Halo (path_e)</td>
+      <td>&mdash;</td>
+      <td>1&nbsp;597 paths/s <em>(burst)</em></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Path Halo (haloPath_e)</td>
+      <td>&mdash;</td>
+      <td>969 paths/s <em>(burst)</em></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
     </tr>
   </tbody>
 </table>
