@@ -307,6 +307,14 @@ make                      # emits bin/*.elf, .map, .bin
 <!-- ────────────────────────────── 3.1 ────────────────────────────── -->
 <h3 id="a5-gradient">3.1 Gradient Fill &mdash; NemaVG</h3>
 
+<figure class="demo-shot">
+  <img src="images/garmin/evb_gradient_fill.png"
+       alt="EVB framebuffer capture: two red-to-green gradient arcs on Apollo 510">
+  <figcaption>Apollo&nbsp;510 EVB framebuffer &mdash; 454&times;454 Raydium DSI display,
+    captured via JLink <code>savebin</code> of the RGBA8888 framebuffer. Two arcs,
+    red&nbsp;&rarr;&nbsp;green linear gradient via <code>nema_vg_draw_ring()</code>.</figcaption>
+</figure>
+
 <p>
   Two thin stroked arcs stacked vertically (<code>cy = RESY/2 &plusmn; RESY/8</code>),
   swept 210&deg;&rarr;330&deg;, radius 160, stroke&nbsp;5. Each arc shares a single
@@ -352,6 +360,15 @@ for (int i = 0; i < ITERS_PER_BATCH; i++) {
 <!-- ────────────────────────────── 3.2 ────────────────────────────── -->
 <h3 id="a5-line">3.2 Line Draw &mdash; NemaVG</h3>
 
+<figure class="demo-shot">
+  <img src="images/garmin/evb_line_draw.png"
+       alt="EVB framebuffer capture: dense cycling-color polylines on Apollo 510">
+  <figcaption>Apollo&nbsp;510 EVB framebuffer &mdash; 10&nbsp;000 stroked polyline
+    vertices rendered by <code>NEMA_VG_PRIM_POLYLINE</code> across 20 batches,
+    8-color palette cycling. Captured after the per-batch buffer fix (see pitfall
+    below).</figcaption>
+</figure>
+
 <p>
   20&nbsp;batches &times; 500&nbsp;lines = 10&nbsp;000&nbsp;lines per timed frame.
   Each batch is a single <code>NEMA_VG_PRIM_POLYLINE</code> path and a solid paint color
@@ -379,6 +396,16 @@ static const uint8_t s_polyline_segs[2] = {
 
 <!-- ────────────────────────────── 3.3 ────────────────────────────── -->
 <h3 id="a5-halo">3.3 Path Halo &mdash; NemaVG</h3>
+
+<figure class="demo-shot">
+  <img src="images/garmin/evb_path_halo.png"
+       alt="EVB framebuffer capture: white 'e' letterform with translucent blue halo">
+  <figcaption>Apollo&nbsp;510 EVB framebuffer &mdash; <code>haloPath_e</code> (blue halo,
+    31 Quads + 17 Lines + 8 Cubics, NonZero fill) drawn <em>before</em>
+    <code>path_e</code> (white letter, 24 Quads + 6 Lines, EvenOdd fill). Each of the
+    4 paths is timed individually; the composite is only rendered when frame capture is
+    enabled.</figcaption>
+</figure>
 
 <p>
   Four paths from Garmin's <code>PathData.cpp</code>:
