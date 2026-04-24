@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garmin VG Benchmarks &mdash; Apollo5 NemaVG &amp; MinnieVG Web Ports</title>
+  <style>
+    :root {
+      --bg: #f6f8fa; --fg: #1a1a2e; --accent: #0969da; --accent-light: #dbeafe;
+      --border: #d1d9e0; --code-bg: #f0f4f8; --code-fg: #24292f; --card-bg: #ffffff;
+      --success: #1a7f37; --warning: #9a6700; --danger: #cf222e; --info: #0550ae;
+      --muted: #656d76; --sidebar-w: 300px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+           background: var(--bg); color: var(--fg); margin: 0; line-height: 1.6; font-size: 15px; }
+
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
+               background: var(--card-bg); border-right: 1px solid var(--border);
+               overflow-y: auto; padding: 24px 0; z-index: 100; }
+    .sidebar h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px;
+                  color: var(--muted); padding: 0 20px; margin: 0 0 12px; }
+    .sidebar ul { list-style: none; margin: 0; padding: 0; }
+    .sidebar a { display: block; padding: 6px 20px; color: var(--fg); text-decoration: none;
+                 font-size: 13.5px; border-left: 3px solid transparent; transition: all .15s; }
+    .sidebar a:hover { background: var(--accent-light); color: var(--accent); }
+    .sidebar a.active { border-left-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .sidebar li.sub a { padding-left: 36px; font-size: 12.5px; color: var(--muted); }
+    .sidebar li.sub a:hover { color: var(--accent); }
+
+    .main-content { margin-left: var(--sidebar-w); padding: 40px 56px 80px; max-width: 1040px; }
+
+    h1 { font-size: 2.2em; margin: 0 0 8px; line-height: 1.2; }
+    h1 + p.subtitle { color: var(--muted); font-size: 1.1em; margin-top: 0; margin-bottom: 2rem; }
+    h2 { font-size: 1.5em; color: var(--accent); margin: 2.5em 0 0.6em;
+         padding-bottom: 8px; border-bottom: 2px solid var(--accent-light);
+         scroll-margin-top: 1rem; }
+    h3 { font-size: 1.15em; color: var(--fg); margin: 1.8em 0 0.5em; scroll-margin-top: 1rem; }
+    h4 { font-size: 1em; margin: 1.2em 0 0.4em; color: var(--muted); }
+
+    code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+           font-size: 0.92em; background: var(--code-bg); color: var(--code-fg);
+           padding: 2px 6px; border-radius: 4px; }
+    pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px 20px; overflow-x: auto; line-height: 1.55; font-size: 13px; }
+    pre code { background: none; padding: 0; font-size: inherit; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 20px 24px; margin: 16px 0; }
+
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+    th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+    th { background: var(--accent-light); font-weight: 600; font-size: 13px; }
+    tr:hover td { background: #f0f6ff; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11.5px;
+             font-weight: 600; letter-spacing: 0.3px; }
+    .badge-green  { background: #dafbe1; color: var(--success); }
+    .badge-blue   { background: var(--accent-light); color: var(--info); }
+    .badge-orange { background: #fff8c5; color: var(--warning); }
+    .badge-red    { background: #ffebe9; color: var(--danger); }
+    .badge-gray   { background: #eaeef2; color: var(--muted); }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                 gap: 16px; margin: 24px 0; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+                 padding: 16px 20px; text-align: center; }
+    .stat-card .num { font-size: 1.9em; font-weight: 700; color: var(--accent); }
+    .stat-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase;
+                        letter-spacing: 0.5px; margin-top: 4px; }
+
+    .note { background: #fff8c5; border-left: 4px solid var(--warning); padding: 14px 18px;
+            border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 14px; }
+    .note-info { background: #dbeafe; border-left: 4px solid var(--info); padding: 14px 18px;
+                 border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 14px; }
+    .note-success { background: #dafbe1; border-left: 4px solid var(--success); padding: 14px 18px;
+                    border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 14px; }
+    .note-danger { background: #ffebe9; border-left: 4px solid var(--danger); padding: 14px 18px;
+                   border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 14px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    footer { margin-top: 60px; padding: 24px 0; border-top: 1px solid var(--border);
+             color: var(--muted); font-size: 13px; text-align: center; }
+
+    a.file-link { color: var(--accent); text-decoration: none; }
+    a.file-link:hover { text-decoration: underline; }
+    .code-src { font-size: .78rem; color: var(--muted); margin: .75rem 0 0;
+                display: flex; align-items: center; gap: .35rem;
+                font-family: 'SFMono-Regular', Consolas, monospace; }
+    .code-src a { color: var(--accent); font-weight: 500; }
+    .code-src + pre { margin-top: .25rem; }
+
+    @media (max-width: 960px) {
+      .sidebar { width: 220px; } .main-content { margin-left: 220px; padding: 32px 28px 60px; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; } .main-content { margin-left: 0; }
+    }
+
+    /* Catppuccin Mocha syntax highlighting */
+    .hljs { background: var(--code-bg)!important; color: var(--code-fg)!important; }
+    .hljs-keyword,.hljs-type{color:#cba6f7}.hljs-built_in{color:#94e2d5}
+    .hljs-string,.hljs-attr{color:#a6e3a1}.hljs-number,.hljs-literal{color:#fab387}
+    .hljs-comment{color:#6c7086;font-style:italic}
+    .hljs-title.function_,.hljs-title{color:#89b4fa}
+    .hljs-meta,.hljs-preprocessor{color:#f38ba8}
+    .hljs-variable,.hljs-params{color:#cdd6f4}
+    .hljs-operator,.hljs-punctuation{color:#9399b2}
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
+        integrity="sha384-v2N1VamRGMTjaFbMagHhjrhEOKBRDFNsalF2dM/q0bzlH3hPG1B3BxVFGhMo7mVG"
+        crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+          integrity="sha384-9mu2JKpUImscOMmwjm1y6MA3LJRecUGEmLlMQ1LsNmBUhPaELwM8N0GOIRbyBuHH"
+          crossorigin="anonymous"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+
+<nav class="sidebar">
+  <h2>Contents</h2>
+  <ul>
+    <li><a href="#overview">1. Overview</a></li>
+    <li><a href="#catalog">2. Benchmark Catalog</a></li>
+    <li class="sub"><a href="#catalog-table">Benchmarks at a Glance</a></li>
+    <li class="sub"><a href="#common-params">Common Parameters</a></li>
+    <li><a href="#apollo5">3. Apollo5 NemaVG Implementations</a></li>
+    <li class="sub"><a href="#a5-env">EVB Environment &amp; Build</a></li>
+    <li class="sub"><a href="#a5-gradient">3.1 Gradient Fill (NemaVG)</a></li>
+    <li class="sub"><a href="#a5-line">3.2 Line Draw (NemaVG)</a></li>
+    <li class="sub"><a href="#a5-halo">3.3 Path Halo (NemaVG)</a></li>
+    <li class="sub"><a href="#a5-capture">EVB Result Capture</a></li>
+    <li><a href="#web">4. MinnieVG / ShaderVG Web Ports</a></li>
+    <li class="sub"><a href="#web-env">Web Build Chain</a></li>
+    <li class="sub"><a href="#web-32">4.1 Demo 32 &mdash; Gradient Fill</a></li>
+    <li class="sub"><a href="#web-33">4.2 Demo 33 &mdash; Line Draw</a></li>
+    <li class="sub"><a href="#web-34">4.3 Demo 34 &mdash; Path Halo</a></li>
+    <li><a href="#tracer">5. Web API Tracer</a></li>
+    <li class="sub"><a href="#tracer-arch">Architecture</a></li>
+    <li class="sub"><a href="#tracer-ids">API IDs &amp; Record Format</a></li>
+    <li class="sub"><a href="#tracer-workflow">Capture Workflow</a></li>
+    <li><a href="#perf">6. Performance Summary</a></li>
+    <li><a href="#gotchas">7. Gotchas &amp; Lessons</a></li>
+    <li><a href="#refs">8. References</a></li>
+  </ul>
+</nav>
+
+<div class="main-content">
+
+<h1>Garmin VG Benchmarks</h1>
+<p class="subtitle">
+  Apollo5 NemaVG reference benchmarks &amp; their MinnieVG + ShaderVG WebGL ports
+  (demos 32 / 33 / 34).
+</p>
+
+<div class="note-info">
+  <strong>Scope.</strong> Three Garmin-derived vector-graphics throughput tests run in two
+  environments: native NemaVG on Apollo 510 EVB (hardware VG GPU) and MinnieVG + ShaderVG
+  compiled to WebAssembly + WebGL2 via Emscripten. Same geometry, same metric, different
+  stacks.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="overview">1. Overview</h2>
+
+<p>
+  Garmin supplied three vector-graphics performance tests as acceptance gates for
+  VG hardware on Ambiq's next-generation smartwatch SoCs:
+</p>
+<ul>
+  <li><strong>Gradient Fill</strong> &mdash; 2 stroked arcs filled with a 2-stop
+    red&nbsp;&rarr;&nbsp;green linear gradient.</li>
+  <li><strong>Line Draw</strong> &mdash; batched stroked polylines with Garmin's
+    endpoint-propagation algorithm and 8-color cycling.</li>
+  <li><strong>Path Halo</strong> &mdash; 4 letterform paths (<code>pathH</code>,
+    <code>haloPathH</code>, <code>path_e</code>, <code>haloPath_e</code>) from
+    Garmin's <code>PathData.cpp</code>.</li>
+</ul>
+
+<p>Each test exists in two parallel implementations:</p>
+
+<div class="grid-2">
+  <div class="card">
+    <h4 style="margin-top:0"><span class="badge badge-blue">EVB</span> Apollo5 / NemaVG</h4>
+    Native C on Apollo 510 EVB (Cortex-M55 @ 192&nbsp;MHz CPU burst, VG GPU @ 250&nbsp;MHz).
+    Single-frame command list, metric reported over <code>nema_get_time()</code>.
+    Results captured via JLink memory-read sentinel.
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0"><span class="badge badge-green">Web</span> MinnieVG + ShaderVG</h4>
+    Emscripten / WebAssembly + WebGL2. Uses the same MinnieVG path + ShaderVG fill
+    primitives as the Apollo5 software backend, so the web port exercises the
+    portable tessellation &amp; shader code paths, not the NemaVG GPU.
+  </div>
+</div>
+
+<h3>Jira &amp; PR tracking</h3>
+<table>
+  <thead><tr><th>Benchmark</th><th>Jira ticket</th><th>BB PR (EVB)</th><th>Web demo</th></tr></thead>
+  <tbody>
+    <tr><td>Gradient Fill</td><td>CARSW-303</td><td>#6013</td><td>Demo 32</td></tr>
+    <tr><td>Line Draw</td><td>CARSW-304</td><td>#6013</td><td>Demo 33</td></tr>
+    <tr><td>Path Halo</td><td>CARSW-302</td><td>#6013</td><td>Demo 34</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="catalog">2. Benchmark Catalog</h2>
+
+<h3 id="catalog-table">Benchmarks at a Glance</h3>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>Name</th><th>Metric</th><th>A5 ref</th><th>EVB actual</th><th>Web actual</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>32</td>
+      <td>Gradient Fill</td>
+      <td>Arcs/sec</td>
+      <td>1.7&nbsp;K</td>
+      <td>8.4&nbsp;K (burst)</td>
+      <td>16.4&nbsp;K</td>
+    </tr>
+    <tr>
+      <td>33</td>
+      <td>Line Draw</td>
+      <td>Lines/sec</td>
+      <td>20&nbsp;K</td>
+      <td>TBD</td>
+      <td>~93&nbsp;K</td>
+    </tr>
+    <tr>
+      <td>34</td>
+      <td>Path Halo</td>
+      <td>Paths/sec</td>
+      <td>6&ndash;22&nbsp;K <em>(per path)</em></td>
+      <td>TBD</td>
+      <td>TBD</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="common-params">Common Parameters</h3>
+
+<p>
+  Resolution is the one point where the two backends diverge in input: the EVB renders
+  to a 454&times;454 RGBA8888 display, while the web demo uses
+  <code>DEMO_SEC_W</code>&times;<code>DEMO_SEC_H</code> (the section canvas). Arc
+  geometry (radius, stroke, sweep), gradient stops, and line algorithms are bit-identical.
+</p>
+
+<table>
+  <thead><tr><th>Parameter</th><th>Gradient Fill</th><th>Line Draw</th><th>Path Halo</th></tr></thead>
+  <tbody>
+    <tr><td>Shapes per frame</td><td>2 arcs</td><td>20&times;500 (EVB) / 60&times;100 (web)</td><td>4 paths &times; 50 iters</td></tr>
+    <tr><td>Stroke width</td><td>5.0</td><td>4.0</td><td>n/a (fills)</td></tr>
+    <tr><td>Fill rule</td><td>EvenOdd</td><td>n/a (stroke)</td><td>EvenOdd + NonZero</td></tr>
+    <tr><td>Paint</td><td>Linear gradient</td><td>Solid (cycled)</td><td>Solid (per-path color)</td></tr>
+    <tr><td>Measurement iterations</td><td>10 batches</td><td>10 batches</td><td>10 batches &times; 50 iters</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="apollo5">3. Apollo5 NemaVG Implementations</h2>
+
+<h3 id="a5-env">EVB Environment &amp; Build</h3>
+
+<table>
+  <thead><tr><th>Item</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Board</td><td><code>apollo510_evb</code> (Cortex-M55)</td></tr>
+    <tr><td>SDK</td><td>AmbiqSuite + NemaGFX_SDK (git submodule)</td></tr>
+    <tr><td>Burst clocks</td><td>CPU 192&nbsp;MHz, GPU 250&nbsp;MHz (<code>CPU_BURST_MODE</code>, <code>GPU_BURST_MODE</code>)</td></tr>
+    <tr><td>Compiler</td><td>arm-none-eabi-gcc 13.2r1, <code>-O2</code></td></tr>
+    <tr><td>Display</td><td>454&times;454 RGBA8888, Raydium DSI</td></tr>
+    <tr><td>CI</td><td><code>bitbucket-pipelines.yml</code> &mdash; PR + stable triggers</td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-bash">cd ambiqsuite/boards/common5/examples/graphics/nemagfx_vg_gradient_fill_bench
+make                      # emits bin/*.elf, .map, .bin
+# Flash + JLink memory read (see §3.4 EVB Result Capture)</code></pre>
+
+<div class="note">
+  The <code>common5</code> sources are the single source of truth.
+  <code>copyprojects.py</code> regenerates the <code>boards/apollo510_evb/</code> tree on
+  demand &mdash; those files are <strong>not</strong> checked in.
+</div>
+
+<!-- ────────────────────────────── 3.1 ────────────────────────────── -->
+<h3 id="a5-gradient">3.1 Gradient Fill &mdash; NemaVG</h3>
+
+<p>
+  Two thin stroked arcs stacked vertically (<code>cy = RESY/2 &plusmn; RESY/8</code>),
+  swept 210&deg;&rarr;330&deg;, radius 160, stroke&nbsp;5. Each arc shares a single
+  2-stop red&rarr;green linear gradient spanning the display width. The draw call is
+  <code>nema_vg_draw_ring()</code>, the paint is <code>NEMA_VG_PAINT_GRAD_LINEAR</code>.
+</p>
+
+<p class="code-src">&mdash;
+  <a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/ambiqsuite/boards/common5/examples/graphics/nemagfx_vg_gradient_fill_bench/src/nemagfx_vg_gradient_fill_bench.c:130">nemagfx_vg_gradient_fill_bench.c</a>
+</p>
+<pre><code class="language-c">NEMA_VG_GRAD_HANDLE grad = nema_vg_grad_create();
+float stops[2] = {0.0f, 1.0f};
+color_var_t colors[2] = {
+    {255,   0,   0, 255},   // red
+    {  0, 255,   0, 255},   // green
+};
+
+g_cl = nema_cl_create_sized(GFB_CL_SIZE);
+nema_cl_bind_circular(&g_cl);
+nema_vg_grad_set(grad, 2, stops, colors);   // MUST follow cl_bind
+nema_cl_submit(&g_cl);
+nema_cl_wait(&g_cl);
+
+nema_vg_paint_set_type(paint, NEMA_VG_PAINT_GRAD_LINEAR);
+nema_vg_paint_set_grad_linear(paint, grad,
+                              0.0f, 0.0f, (float)RESX, 0.0f,
+                              NEMA_TEX_CLAMP | NEMA_FILTER_BL);
+nema_vg_stroke_set_width(GFB_ARC_STROKE);
+
+for (int i = 0; i < ITERS_PER_BATCH; i++) {
+    nema_vg_draw_ring(cx, GFB_ARC1_CY, GFB_ARC_RADIUS, 210.0f, 330.0f, paint);
+    nema_vg_draw_ring(cx, GFB_ARC2_CY, GFB_ARC_RADIUS, 210.0f, 330.0f, paint);
+}</code></pre>
+
+<div class="note-danger">
+  <strong>Apollo5 pitfall.</strong> <code>nema_vg_grad_set()</code> <em>must</em> be called
+  with a command list already bound. Calling it before
+  <code>nema_cl_create()</code>/<code>nema_cl_bind()</code> silently drops the GPU
+  commands that upload the gradient LUT &mdash; rendered output is then solid color or
+  corrupted.
+</div>
+
+<!-- ────────────────────────────── 3.2 ────────────────────────────── -->
+<h3 id="a5-line">3.2 Line Draw &mdash; NemaVG</h3>
+
+<p>
+  20&nbsp;batches &times; 500&nbsp;lines = 10&nbsp;000&nbsp;lines per timed frame.
+  Each batch is a single <code>NEMA_VG_PRIM_POLYLINE</code> path and a solid paint color
+  cycled from an 8-entry palette. Endpoints propagate via Garmin's algorithm
+  (<code>x += i % 29; y += 23 - i % 23</code> with reflection at the <code>width*2</code>
+  / <code>height*2</code> modulus).
+</p>
+
+<p class="code-src">&mdash;
+  <a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/ambiqsuite/boards/common5/examples/graphics/nemagfx_vg_line_draw_bench/src/nemagfx_vg_line_draw_bench.c:88">nemagfx_vg_line_draw_bench.c</a>
+</p>
+<pre><code class="language-c">// Per-batch polyline buffer + path handle (all survive to the final cl_submit)
+#define LDB_MAX_POINTS (LDB_LINES_PER_FLUSH + 1)
+static float s_polyline_data[LDB_BATCHES][LDB_MAX_POINTS * 2];
+static NEMA_VG_PATH_HANDLE s_paths[LDB_BATCHES];
+static const uint8_t s_polyline_segs[2] = {
+    NEMA_VG_PRIM_MOVE, NEMA_VG_PRIM_POLYLINE
+};</code></pre>
+
+<div class="note-danger">
+  <strong>Apollo5 pitfall.</strong> Sharing a single polyline buffer across batches
+  renders only the <em>last</em> batch (every deferred CL draw reads the final coords) &mdash;
+  the infamous "single yellow line" artifact. Use one buffer + one path handle per batch.
+</div>
+
+<!-- ────────────────────────────── 3.3 ────────────────────────────── -->
+<h3 id="a5-halo">3.3 Path Halo &mdash; NemaVG</h3>
+
+<p>
+  Four paths from Garmin's <code>PathData.cpp</code>:
+</p>
+
+<table>
+  <thead><tr><th>Path</th><th>Fill rule</th><th>Composition</th><th>Garmin A5 ref</th></tr></thead>
+  <tbody>
+    <tr><td><code>pathH</code></td><td>EvenOdd</td><td>12 Lines</td><td>22&nbsp;500 paths/s</td></tr>
+    <tr><td><code>haloPathH</code></td><td>NonZero</td><td>8 Cubics + 16 Lines</td><td>9&nbsp;800 paths/s</td></tr>
+    <tr><td><code>path_e</code></td><td>EvenOdd</td><td>24 Quads + 6 Lines, 2 sub-paths</td><td>13&nbsp;200 paths/s</td></tr>
+    <tr><td><code>haloPath_e</code></td><td>NonZero</td><td>31 Quads + 17 Lines + 8 Cubics</td><td>6&nbsp;000 paths/s</td></tr>
+  </tbody>
+</table>
+
+<p>
+  The "halo" is a <em>second</em> pre-baked vector path shaped like the glyph outline
+  expanded outward with smooth Bezier curves; at render time it's drawn with a
+  translucent blue paint <em>before</em> the solid-white letter. Each path is timed
+  individually &mdash; the benchmark measures 4 distinct GPU workloads, not a composite.
+</p>
+
+<p class="code-src">&mdash;
+  <a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/ambiqsuite/boards/common5/examples/graphics/nemagfx_vg_path_halo_bench/src/nemagfx_vg_path_halo_bench.c:1">nemagfx_vg_path_halo_bench.c</a>
+</p>
+
+<!-- ────────────────────────────── 3.4 ────────────────────────────── -->
+<h3 id="a5-capture">EVB Result Capture (JLink memory read)</h3>
+
+<p>
+  SWO printf becomes unreliable once the CPU enters burst mode (UART baud drifts).
+  Each benchmark writes its result to a known memory sentinel that JLink reads after
+  the run completes.
+</p>
+
+<pre><code class="language-c">volatile float    g_bench_result[2]  __attribute__((used)) = {0};
+volatile uint32_t g_bench_sentinel   __attribute__((used)) = 0;
+/* ... benchmark loop ... */
+g_bench_result[0] = avg;           // arcs/sec, lines/sec, paths/sec
+g_bench_result[1] = total_secs;
+g_bench_sentinel  = 0xDEADBEEFU;</code></pre>
+
+<p>Workflow:</p>
+<ol>
+  <li>Build &amp; flash with <code>JLink -CommandFile flash.jlink</code>.</li>
+  <li>Wait (5&ndash;20&nbsp;s depending on config).</li>
+  <li>Halt CPU; <code>mem32</code> read the sentinel + result addresses (retrieved from
+    the <code>.map</code> file &mdash; addresses shift every rebuild).</li>
+  <li>Decode IEEE-754 floats from the u32 words.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="web">4. MinnieVG / ShaderVG Web Ports</h2>
+
+<h3 id="web-env">Web Build Chain</h3>
+
+<pre><code class="language-bash">source emsdk/emsdk_env.sh
+cd tes_fpga_evalkit_sw/demos/nema_2_dave_common
+
+# Single section (enables the tracer for this build)
+make -f Makefile.sections_minnie PLATFORM=web VG_TRACE_ENABLE=1 SEC=32
+
+# Output: ../build/web/standalone/minnie_demo_32_gradient_fill_bench.html</code></pre>
+
+<p>Pass <code>SEC=33</code> / <code>SEC=34</code> for the other two. Omit
+<code>VG_TRACE_ENABLE=1</code> for zero-overhead production builds (tracer macros
+compile to direct function calls).</p>
+
+<!-- ────────────────────────────── 4.1 ────────────────────────────── -->
+<h3 id="web-32">4.1 Demo 32 &mdash; Gradient Fill</h3>
+
+<p>
+  Renders 2 arcs as annular ShaderVG triangle strips that consume the demo's linear
+  gradient paint. This is the Apollo5-parity rewrite (April 2026) &mdash; the earlier
+  implementation used <code>sdvg_DrawEllipseStrokeAA</code> and produced different
+  geometry.
+</p>
+
+<h4>Geometry (matches Apollo5 1:1)</h4>
+<pre><code class="language-c">#define GFB_NUM_ARCS    2
+#define GFB_ARC_RADIUS  160.0f
+#define GFB_ARC_STROKE  5.0f
+#define GFB_ARC_START   210.0f
+#define GFB_ARC_END     330.0f
+#define GFB_NUM_SEG     48
+#define GFB_ARC1_CY     ((float)(DEMO_SEC_H / 2) - (float)(DEMO_SEC_H / 8))
+#define GFB_ARC2_CY     ((float)(DEMO_SEC_H / 2) + (float)(DEMO_SEC_H / 8))</code></pre>
+
+<h4>Annular triangle strip</h4>
+<pre><code class="language-c">static inline void gfb_draw_arc_strip(float cx, float cy) {
+    const float r_outer = GFB_ARC_RADIUS + GFB_ARC_STROKE * 0.5f;
+    const float r_inner = GFB_ARC_RADIUS - GFB_ARC_STROKE * 0.5f;
+    const sUI numVerts = (sUI)(2 * (GFB_NUM_SEG + 1));
+    if (!sdvg_BeginFilledTriangleStrip(numVerts)) return;
+    for (int j = 0; j <= GFB_NUM_SEG; j++) {
+        float a  = startRad + ((float)j / GFB_NUM_SEG) * sweep;
+        float cs = cosf(a), sn = sinf(a);
+        sdvg_Vertex2f(cx + r_outer * cs, cy + r_outer * sn);
+        sdvg_Vertex2f(cx + r_inner * cs, cy + r_inner * sn);
+    }
+    sdvg_End();
+}</code></pre>
+
+<div class="note-danger">
+  <strong>Gotcha &mdash; R/B channel swap.</strong>
+  <code>mdemo_gradient_set()</code> packs the LUT as ARGB <code>u32</code> but uploads it
+  via <code>glTexImage2D(&hellip;, GL_RGBA, GL_UNSIGNED_BYTE, &hellip;)</code>. On
+  little-endian hosts the R and B channels swap in the fragment sampler. The demo
+  compensates by pre-swapping R&harr;B in the input stops:
+  <pre style="margin-top:.5rem"><code class="language-c">mdemo_color_t colors[2] = {
+    {0.0f, 0.0f, 1.0f, 1.0f},   /* red   (b=1 -> samples as red after swap) */
+    {0.0f, 1.0f, 0.0f, 1.0f},   /* green (g is channel-symmetric)           */
+};</code></pre>
+</div>
+
+<div class="note">
+  <strong>Why <code>sdvg_BeginFilledTriangleStrip</code> and not
+  <code>minDrawPath</code>?</strong> MinnieVG's path renderer doesn't consume
+  ShaderVG's paint state &mdash; gradient paints only apply to ShaderVG fill primitives.
+  The first port attempt drew with MinnieVG paths and rendered white arcs.
+</div>
+
+<p class="code-src">&mdash;
+  <a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw.worktrees/copilot-worktree-2026-03-30T21-29-47/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_32_gradient_fill_bench.c:1">minnie_demo_32_gradient_fill_bench.c</a>
+</p>
+
+<!-- ────────────────────────────── 4.2 ────────────────────────────── -->
+<h3 id="web-33">4.2 Demo 33 &mdash; Line Draw</h3>
+
+<p>
+  60 batches &times; 100 lines = 6&nbsp;000 lines per timed frame. Per-batch color cycling
+  from an 8-entry palette. Each line is an AA-stroked <code>sdvg_BeginLineStripAA</code>
+  with 2 vertices, dispatched through <code>mdemo_draw_line()</code>.
+</p>
+
+<pre><code class="language-c">s_stroke_width = 4.0f;   // matches Apollo5 LDB_STROKE_WIDTH
+
+int x = 5, y = 5;
+int prevX = x, prevY = y;
+
+for (int batch = 0; batch < LDB_BATCHES; batch++) {
+    VG_TRACE_BATCH_BEGIN(batch);
+    const mdemo_color_t *c = &s_ldb_colors[batch % LDB_NUM_COLORS];
+    mdemo_paint_set_color(s_stroke, c->r, c->g, c->b, c->a);
+    for (int i = 0; i < LDB_LINES_PER_FLUSH; i++) {
+        x += i % 29;  y += 23 - i % 23;
+        x %= width * 2;  y %= height * 2;
+        int xCoord = (x >= width) ? 2 * width  - x : x;
+        int yCoord = (y >= height)? 2 * height - y : y;
+        mdemo_draw_line((float)prevX, (float)prevY + 30.0f,
+                        (float)xCoord, (float)yCoord + 30.0f, s_stroke);
+        prevX = xCoord; prevY = yCoord;
+    }
+    VG_TRACE_BATCH_END(batch);
+}</code></pre>
+
+<p class="code-src">&mdash;
+  <a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw.worktrees/copilot-worktree-2026-03-30T21-29-47/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_33_line_draw_bench.c:1">minnie_demo_33_line_draw_bench.c</a>
+</p>
+
+<!-- ────────────────────────────── 4.3 ────────────────────────────── -->
+<h3 id="web-34">4.3 Demo 34 &mdash; Path Halo</h3>
+
+<p>
+  Uses MinnieVG path API directly. Each of the 4 letterform paths is built by
+  <code>minBeginPathEx</code> + <code>minMoveTo</code> / <code>minLineTo</code> /
+  <code>minQuadTo</code> / <code>minCubicTo</code>, then dispatched through
+  <code>minEndPath</code> + <code>minDrawPath(1)</code> for the dual halo+path draw.
+</p>
+
+<pre><code class="language-c">mdemo_minnie_begin_frame();
+    minColor(c32_halo);  minFill();
+    minBeginPathEx(MINNIE_PATH_TYPE_CONCAVE);
+    /* emit haloPathH via cmd+data tables */
+    minEndPath(1);  minDrawPath(1);
+
+    minColor(c32_letter);  minFill();
+    minBeginPathEx(MINNIE_PATH_TYPE_EVENODD);
+    /* emit pathH */
+    minEndPath(1);  minDrawPath(1);
+mdemo_minnie_end_frame();</code></pre>
+
+<p>Fill-rule mapping:</p>
+<ul>
+  <li>Garmin <code>Fill::EvenOdd</code> &rarr; <code>MINNIE_PATH_TYPE_EVENODD</code></li>
+  <li>Garmin <code>Fill::NonZero</code> &rarr; <code>MINNIE_PATH_TYPE_CONCAVE</code></li>
+</ul>
+
+<p class="code-src">&mdash;
+  <a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw.worktrees/copilot-worktree-2026-03-30T21-29-47/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_34_path_halo_bench.c:1">minnie_demo_34_path_halo_bench.c</a>
+</p>
+
+<!-- ============================================================ -->
+<h2 id="tracer">5. Web API Tracer</h2>
+
+<h3 id="tracer-arch">Architecture</h3>
+
+<p>
+  The web build has an opt-in instrumenter (<code>VG_TRACE_ENABLE=1</code>) that captures
+  every MinnieVG and ShaderVG call into a fixed-size ring buffer. The on-disk record
+  format is byte-identical to the Apollo510 EVB NemaVG tracer, so a single
+  <code>vg_trace_viewer.html</code> decodes both.
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">VGTR</div><div class="label">Magic</div></div>
+  <div class="stat-card"><div class="num">16 K</div><div class="label">Records (web)</div></div>
+  <div class="stat-card"><div class="num">32&nbsp;B</div><div class="label">Record size</div></div>
+  <div class="stat-card"><div class="num">512&nbsp;KB</div><div class="label">Ring size</div></div>
+  <div class="stat-card"><div class="num">ns</div><div class="label">Web timebase</div></div>
+  <div class="stat-card"><div class="num">cycles</div><div class="label">EVB timebase</div></div>
+</div>
+
+<p>
+  When <code>VG_TRACE_ENABLE</code> is set, the header rewrites each <code>min*</code> /
+  <code>sdvg_*</code> call at preprocessor time to a <code>vg_trace_&lt;name&gt;</code>
+  wrapper that writes one record and dispatches to the real symbol. When disabled, no
+  macros are defined and calls go direct to the library &mdash; <strong>zero overhead</strong>.
+</p>
+
+<h3 id="tracer-ids">API IDs &amp; Record Format</h3>
+
+<table>
+  <thead><tr><th>Range</th><th>Owner</th><th>Examples</th></tr></thead>
+  <tbody>
+    <tr><td><code>0x000-0x0EF</code></td><td>EVB NemaVG</td><td><code>nema_vg_draw_ring</code>, <code>nema_cl_submit</code></td></tr>
+    <tr><td><code>0x0F0-0x0FF</code></td><td>Bench markers <em>(shared)</em></td><td><code>TEST_BEGIN</code>, <code>BATCH_BEGIN</code>, <code>FRAME_BEGIN</code>, &hellip;</td></tr>
+    <tr><td><code>0x200-0x2FF</code></td><td>MinnieVG (web)</td><td><code>minMoveTo</code>, <code>minBeginPathEx</code>, <code>minDrawPath</code></td></tr>
+    <tr><td><code>0x300-0x3FF</code></td><td>ShaderVG (web)</td><td><code>sdvg_PaintLinear</code>, <code>sdvg_Vertex2f</code>, <code>sdvg_End</code></td></tr>
+  </tbody>
+</table>
+
+<pre><code class="language-c">typedef struct {
+    uint32_t cycle;        // web: ns since init, EVB: CPU cycles
+    uint16_t api_id;
+    uint16_t arg_count;
+    uint32_t args[6];      // floats stored as IEEE-754 u32
+} vg_trace_rec_t;</code></pre>
+
+<h3 id="tracer-workflow">Capture Workflow</h3>
+
+<ol>
+  <li>Build with <code>VG_TRACE_ENABLE=1</code>; deploy the HTML.</li>
+  <li>Run the benchmark in a browser; the tracer ring fills continuously.</li>
+  <li>Start the POST sidecar on <code>127.0.0.1:8788</code> (upload bin to
+      <code>minnie-vg-demos/results/</code>).</li>
+  <li>Dashboard button triggers <code>vg_trace_dump()</code> &rarr; sidecar receives the
+      512&nbsp;KB blob &rarr; saves as e.g. <code>gradient_fill_web.bin</code>.</li>
+  <li>Open <code>vg_trace_viewer.html</code>, load the bin; records decode as color-chip
+      rows (<span class="badge badge-orange">amber</span>&nbsp;MinnieVG,
+      <span class="badge badge-blue">violet</span>&nbsp;ShaderVG,
+      <span class="badge badge-gray">gray</span>&nbsp;bench marker).</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="perf">6. Performance Summary</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Benchmark</th>
+      <th>Apollo5 Garmin ref</th>
+      <th>EVB NemaVG<br><small>(CPU 192, GPU 250 MHz)</small></th>
+      <th>Web MinnieVG+ShaderVG<br><small>(WebGL2, desktop browser)</small></th>
+      <th>Web vs ref</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gradient Fill</td>
+      <td>1&nbsp;700 arcs/s</td>
+      <td>~8&nbsp;400 arcs/s <em>(burst)</em></td>
+      <td><strong>16&nbsp;428 arcs/s</strong></td>
+      <td><span class="badge badge-green">9.7&times;</span></td>
+    </tr>
+    <tr>
+      <td>Line Draw</td>
+      <td>20&nbsp;000 lines/s</td>
+      <td>TBD</td>
+      <td><strong>~93&nbsp;000 lines/s</strong></td>
+      <td><span class="badge badge-green">4.7&times;</span></td>
+    </tr>
+    <tr>
+      <td>Path Halo (pathH)</td>
+      <td>22&nbsp;500 paths/s</td>
+      <td>TBD</td>
+      <td>TBD</td>
+      <td><span class="badge badge-gray">pending</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note-info">
+  The web path is <em>not</em> a fair apples-to-apples comparison with the MCU &mdash; the
+  browser runs on a desktop GPU and can burn far more fill-rate per frame. The web
+  numbers are useful for validating the portable MinnieVG tessellation &amp; ShaderVG
+  fragment pipeline, and for regression-checking demo behavior between commits.
+</div>
+
+<h3>EVB optimization multipliers (gradient_fill_bench, measured)</h3>
+<table>
+  <thead><tr><th>Factor</th><th>Change</th><th>Speedup</th></tr></thead>
+  <tbody>
+    <tr><td><code>-O0</code> &rarr; <code>-O2</code></td><td>compiler</td><td>3.14&times;</td></tr>
+    <tr><td>GPU 96 &rarr; 250 MHz</td><td><code>GPU_BURST_MODE</code></td><td>1.25&times;</td></tr>
+    <tr><td>CPU 96 &rarr; 192 MHz</td><td><code>CPU_BURST_MODE</code></td><td>1.95&times;</td></tr>
+    <tr><td><strong>Combined</strong></td><td>all three</td><td><strong>7.68&times;</strong></td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="gotchas">7. Gotchas &amp; Lessons</h2>
+
+<h3>Apollo5 / NemaVG</h3>
+<ul>
+  <li><strong>Gradient LUT upload timing.</strong> <code>nema_vg_grad_set()</code> must
+    come <em>after</em> <code>nema_cl_bind()</code> &mdash; the call emits GPU commands.</li>
+  <li><strong>One polyline buffer per batch.</strong> CL draws are deferred &mdash; all
+    batches read from the same memory at submit time. Per-batch buffers are mandatory.</li>
+  <li><strong><code>nema_vg_draw_line()</code> is broken.</strong> Use path API
+    (<code>MOVE</code> + <code>LINE</code>) or <code>POLYLINE</code> as workaround.</li>
+  <li><strong>SWO stops working after burst switch.</strong> UART clock drifts; re-call
+    <code>am_bsp_itm_printf_enable()</code> or use the JLink memory-read sentinel.</li>
+  <li><strong>Addresses shift every rebuild.</strong> Always re-parse
+    <code>bin/*.map</code> for <code>g_bench_result</code> / <code>g_bench_sentinel</code>.</li>
+  <li><strong><code>line_draw_bench</code> ships <code>-O0</code>.</strong> Check the
+    generated Makefile and fix to <code>-O2</code> before benchmarking.</li>
+</ul>
+
+<h3>Web / Emscripten</h3>
+<ul>
+  <li><strong><code>MIN_WEBGL_VERSION=2</code> required.</strong> Without it,
+    Emscripten 5.0.0 JSDCE at <code>-O2</code> strips the
+    <code>canvas.getContext("webgl2")</code> branch and EGL fails with
+    <code>EGL_BAD_MATCH</code>.</li>
+  <li><strong>Gradient R/B swap.</strong> <code>mdemo_gradient_set()</code> packs ARGB but
+    uploads via <code>GL_RGBA</code> &mdash; pre-swap R&harr;B in stops.</li>
+  <li><strong>MinnieVG paths don't consume ShaderVG paint.</strong> For gradients, use
+    <code>sdvg_BeginFilledTriangleStrip</code>. For solid fills either works.</li>
+  <li><strong><code>EM_ASM</code> commas.</strong> The C preprocessor splits on <code>,</code>
+    &mdash; <code>{}</code> doesn't protect them. Wrap complex JS in an IIFE:
+    <code>EM_ASM((function(){ &hellip; })());</code></li>
+  <li><strong>Makefile doesn't track <code>--post-js</code> deps.</strong> Touch the
+    relevant <code>.c</code> file to force relink after JS edits.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="refs">8. References</h2>
+
+<h3>Source files</h3>
+<table>
+  <thead><tr><th>Location</th><th>File</th></tr></thead>
+  <tbody>
+    <tr><td>Apollo5 EVB</td>
+        <td><a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/ambiqsuite/boards/common5/examples/graphics/nemagfx_vg_gradient_fill_bench/src/nemagfx_vg_gradient_fill_bench.c"><code>nemagfx_vg_gradient_fill_bench.c</code></a></td></tr>
+    <tr><td>Apollo5 EVB</td>
+        <td><a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/ambiqsuite/boards/common5/examples/graphics/nemagfx_vg_line_draw_bench/src/nemagfx_vg_line_draw_bench.c"><code>nemagfx_vg_line_draw_bench.c</code></a></td></tr>
+    <tr><td>Apollo5 EVB</td>
+        <td><a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/ambiqsuite/boards/common5/examples/graphics/nemagfx_vg_path_halo_bench/src/nemagfx_vg_path_halo_bench.c"><code>nemagfx_vg_path_halo_bench.c</code></a></td></tr>
+    <tr><td>Web / MinnieVG</td>
+        <td><a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw.worktrees/copilot-worktree-2026-03-30T21-29-47/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_32_gradient_fill_bench.c"><code>minnie_demo_32_gradient_fill_bench.c</code></a></td></tr>
+    <tr><td>Web / MinnieVG</td>
+        <td><a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw.worktrees/copilot-worktree-2026-03-30T21-29-47/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_33_line_draw_bench.c"><code>minnie_demo_33_line_draw_bench.c</code></a></td></tr>
+    <tr><td>Web / MinnieVG</td>
+        <td><a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw.worktrees/copilot-worktree-2026-03-30T21-29-47/demos/nema_2_dave_common/src/minnie_demo_sections/minnie_demo_34_path_halo_bench.c"><code>minnie_demo_34_path_halo_bench.c</code></a></td></tr>
+    <tr><td>Web tracer</td>
+        <td><a class="file-link" href="vscode://file/c:/cygwin64/home/DavidYoung/projects/tes_fpga_evalkit_sw.worktrees/copilot-worktree-2026-03-30T21-29-47/demos/nema_2_dave_common/src/vg_trace_web/vg_trace_web.h"><code>vg_trace_web.h</code></a></td></tr>
+  </tbody>
+</table>
+
+<h3>Related docs</h3>
+<ul>
+  <li><a href="garmin_benchmark_analysis.html">garmin_benchmark_analysis.html</a> &mdash; original
+    analysis + Garmin spec.</li>
+  <li><a href="garmin_benchmark_implementation.html">garmin_benchmark_implementation.html</a>
+    &mdash; early EVB implementation notes.</li>
+  <li><a href="vg_gradient_fill_bench_rewrite.html">vg_gradient_fill_bench_rewrite.html</a>
+    &mdash; EVB gradient_fill rewrite history.</li>
+  <li><a href="gradient_fill_bench_results.html">gradient_fill_bench_results.html</a>,
+      <a href="line_draw_bench_results.html">line_draw_bench_results.html</a>,
+      <a href="path_halo_bench_results.html">path_halo_bench_results.html</a>
+      &mdash; per-benchmark results dashboards.</li>
+  <li><a href="vg_benchmarks_perf.html">vg_benchmarks_perf.html</a> /
+      <a href="vg_benchmark_comparison.html">vg_benchmark_comparison.html</a>
+      &mdash; cross-benchmark comparisons.</li>
+  <li><a href="demo38_build_process.html">demo38_build_process.html</a> &mdash; canonical
+    web build chain reference.</li>
+</ul>
+
+<h3>External</h3>
+<ul>
+  <li>Jira epic <strong>CARSW-208</strong> &mdash; Graphics Bring-up on FPGA.</li>
+  <li>Jira tickets <strong>CARSW-302 / 303 / 304</strong> &mdash; per-benchmark.</li>
+  <li>Bitbucket PR <strong>#6013</strong> (<code>benchmarks/garmin-3bench</code>
+    &rarr; <code>stable</code>).</li>
+  <li>Hosted web demos: <code>https://davidyoung-ambiq.github.io/minnie-vg-demos/</code></li>
+</ul>
+
+<footer>
+  Garmin VG Benchmarks &mdash; Apollo5 NemaVG &amp; MinnieVG Web Ports
+  &nbsp;&middot;&nbsp; generated April 23, 2026
+</footer>
+
+</div>
+</body>
+</html>
