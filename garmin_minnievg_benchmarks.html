@@ -616,36 +616,48 @@ for (int batch = 0; batch < LDB_BATCHES; batch++) {
 
 <figure class="demo-shot">
   <img src="images/garmin/demo34_path_halo.png"
-       alt="Demo 34 screenshot: blue letterforms H and e with dark halos">
-  <figcaption>Demo 34 running in Chrome &mdash; 4 Garmin letterform paths
-    (<code>pathH</code>, <code>haloPathH</code>, <code>path_e</code>,
-    <code>haloPath_e</code>) rendered via <code>minDrawPath</code>,
-    ~8.1K paths/sec throughput.</figcaption>
+       alt="Demo 34 screenshot: blue 'e' letterform with lighter halo">
+  <figcaption>Demo 34 running in Chrome &mdash; matches the Apollo5 EVB reference
+    by rendering only the <code>e</code> glyph (<code>haloPath_e</code> behind,
+    <code>path_e</code> on top). ~8.4K paths/sec throughput.</figcaption>
 </figure>
 
 <p>
-  Uses MinnieVG path API directly. Each of the 4 letterform paths is built by
-  <code>minBeginPathEx</code> + <code>minMoveTo</code> / <code>minLineTo</code> /
-  <code>minQuadTo</code> / <code>minCubicTo</code>, then dispatched through
-  <code>minEndPath</code> + <code>minDrawPath(1)</code> for the dual halo+path draw.
+  Uses MinnieVG path API directly. Each path is built by <code>minBeginPathEx</code> +
+  <code>minMoveTo</code> / <code>minLineTo</code> / <code>minQuadTo</code> /
+  <code>minCubicTo</code>, then dispatched through <code>minEndPath</code> +
+  <code>minDrawPath(1)</code> for the dual halo+letter draw.
 </p>
+
+<div class="note-info">
+  <strong>NonZero workaround.</strong> Garmin's spec uses NonZero winding for both
+  halo paths, but MinnieVG has no NonZero tessellator that handles Bézier curves
+  (<code>MINNIE_PATH_TYPE_CONCAVE</code>'s ear-clipping fails on cubics;
+  <code>MINNIE_PATH_TYPE_EVENODD</code>'s SGI sweep treats additional subpaths as
+  holes). <code>haloPath_e</code> has a second "inner counter" subpath that
+  EvenOdd would punch through the halo as a visible artifact. The demo walks only
+  subpath&nbsp;1 (<code>HALO_PATH_E_OUTER_NUM_CMDS</code>=41 out of 59), yielding a
+  solid halo blob; the letter fill drawn on top creates the correct aperture
+  naturally.
+</div>
 
 <pre><code class="language-c">mdemo_minnie_begin_frame();
     minColor(c32_halo);  minFill();
-    minBeginPathEx(MINNIE_PATH_TYPE_CONCAVE);
-    /* emit haloPathH via cmd+data tables */
+    minBeginPathEx(MINNIE_PATH_TYPE_EVENODD);
+    /* emit haloPath_e outer contour only (subpath 1 of 2) */
     minEndPath(1);  minDrawPath(1);
 
     minColor(c32_letter);  minFill();
     minBeginPathEx(MINNIE_PATH_TYPE_EVENODD);
-    /* emit pathH */
+    /* emit path_e (both subpaths — inner counter is a legit hole) */
     minEndPath(1);  minDrawPath(1);
 mdemo_minnie_end_frame();</code></pre>
 
 <p>Fill-rule mapping:</p>
 <ul>
   <li>Garmin <code>Fill::EvenOdd</code> &rarr; <code>MINNIE_PATH_TYPE_EVENODD</code></li>
-  <li>Garmin <code>Fill::NonZero</code> &rarr; <code>MINNIE_PATH_TYPE_CONCAVE</code></li>
+  <li>Garmin <code>Fill::NonZero</code> &rarr; <code>MINNIE_PATH_TYPE_EVENODD</code>
+      with outer-contour-only workaround (see note above)</li>
 </ul>
 
 <p class="code-src">&mdash;
@@ -776,11 +788,12 @@ mdemo_minnie_end_frame();</code></pre>
            alt="WebGL2 canvas: blue 'e' with light halo (demo 34)">
     </div>
   </div>
-  <figcaption><strong>Path Halo</strong> &mdash; Garmin letterform paths
-    (<code>pathH</code>, <code>haloPathH</code>, <code>path_e</code>,
-    <code>haloPath_e</code>). EVB: <code>nema_vg_path_create</code> + mixed
-    EvenOdd/NonZero fill. Web: <code>minBeginPathEx</code> + <code>minDrawPath(1)</code>
-    with halo drawn <em>before</em> the letter for proper compositing.</figcaption>
+  <figcaption><strong>Path Halo</strong> &mdash; Garmin letterform <code>e</code>
+    with halo. EVB: <code>nema_vg_path_create</code> + mixed EvenOdd/NonZero fill
+    (all 4 glyph paths timed; composite shown). Web: only the <code>e</code> is
+    rendered to match the EVB visual (<code>haloPath_e</code> outer contour +
+    <code>path_e</code>) via <code>minBeginPathEx</code> + <code>minDrawPath(1)</code>,
+    halo drawn <em>before</em> the letter for proper compositing.</figcaption>
 </figure>
 
 <h3 id="perf-table">Throughput Comparison</h3>
