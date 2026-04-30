@@ -56,6 +56,7 @@
     .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11.5px;
              font-weight: 600; letter-spacing: 0.3px; }
     .badge-green  { background: #dafbe1; color: var(--success); }
+    .badge-yellow { background: #fff3cd; color: #856404; }
     .badge-blue   { background: var(--accent-light); color: var(--info); }
     .badge-orange { background: #fff8c5; color: var(--warning); }
     .badge-red    { background: #ffebe9; color: var(--danger); }
@@ -804,8 +805,10 @@ mdemo_minnie_end_frame();</code></pre>
       <th>Benchmark</th>
       <th>Apollo5 Garmin ref</th>
       <th>EVB NemaVG<br><small>(CPU 192, GPU 250 MHz)</small></th>
-      <th>Web MinnieVG+ShaderVG<br><small>(WebGL2, desktop browser)</small></th>
-      <th>Web vs ref</th>
+      <th>Web MinnieVG+ShaderVG<br><small>(WebGL2, SwiftShader headless, Apr 30 2026)</small></th>
+      <th>SDL2 PC<br><small>(SW rasterizer, Apr 30 2026)</small></th>
+      <th>NemaVG vs Web<br><small>(EVB &divide; Web)</small></th>
+      <th>Web vs ref<br><small>(Web &divide; Garmin ref)</small></th>
     </tr>
   </thead>
   <tbody>
@@ -814,6 +817,8 @@ mdemo_minnie_end_frame();</code></pre>
       <td>1&nbsp;700 arcs/s</td>
       <td>11&nbsp;741 arcs/s <em>(burst)</em></td>
       <td><strong>16&nbsp;428 arcs/s</strong></td>
+      <td><strong>1&nbsp;774 arcs/s</strong> <em>(10-batch avg)</em></td>
+      <td><span class="badge badge-yellow">0.71&times;</span> <small>(NemaVG slower than web)</small></td>
       <td><span class="badge badge-green">9.7&times;</span></td>
     </tr>
     <tr>
@@ -821,33 +826,52 @@ mdemo_minnie_end_frame();</code></pre>
       <td>20&nbsp;000 lines/s</td>
       <td>895&nbsp;985 lines/s <em>(burst)</em></td>
       <td><strong>~81&nbsp;835 lines/s</strong></td>
+      <td><strong>90&nbsp;968 lines/s</strong> avg <em>(frame 1 slow 20K, frames 2+ 55K&ndash;218K; SW cache)</em></td>
+      <td><span class="badge badge-green">10.9&times;</span></td>
       <td><span class="badge badge-green">4.1&times;</span></td>
     </tr>
     <tr>
-      <td>Path Halo (pathH)</td>
-      <td>22&nbsp;500 paths/s</td>
+      <td>Path Halo &mdash; <code>pathH</code><br><small>12-line EvenOdd fill (simplest)</small></td>
+      <td>22&nbsp;500 paths/s &#9888;</td>
       <td>1&nbsp;702 paths/s <em>(burst)</em></td>
-      <td><strong>~8&nbsp;375 paths/s</strong></td>
-      <td><span class="badge badge-gray">0.37&times;</span></td>
+      <td><strong>27&nbsp;599 paths/s</strong> <em>(Apr 30, SwiftShader &sect;)</em></td>
+      <td><strong>4&nbsp;509 paths/s</strong> <em>(10-frame avg, PHB_MODE=2)</em></td>
+      <td><span class="badge badge-yellow">0.06&times;</span> <small>(NemaVG ~17&times; slower)</small></td>
+      <td><span class="badge badge-green">1.23&times;</span> <small>(web exceeds Garmin ref!)</small></td>
     </tr>
     <tr>
-      <td>Path Halo (haloPathH)</td>
-      <td>&mdash;</td>
+      <td>Path Halo &mdash; <code>haloPathH</code><br><small>H-glyph halo, NonZero, cubics</small></td>
+      <td>9&nbsp;800 paths/s</td>
       <td>911 paths/s <em>(burst)</em></td>
-      <td>&mdash;</td>
-      <td>&mdash;</td>
+      <td><strong>9&nbsp;055 paths/s</strong> <em>(Apr 30, SwiftShader &sect;)</em></td>
+      <td><strong>2&nbsp;987 paths/s</strong> <em>(10-frame avg, PHB_MODE=3)</em></td>
+      <td><span class="badge badge-yellow">0.10&times;</span> <small>(NemaVG ~10&times; slower)</small></td>
+      <td><span class="badge badge-green">0.92&times;</span> <small>(web &asymp; Garmin ref)</small></td>
     </tr>
     <tr>
-      <td>Path Halo (path_e)</td>
-      <td>&mdash;</td>
+      <td>Path Halo &mdash; <code>path_e</code><br><small>e-glyph fill, EvenOdd, 33 cmds</small></td>
+      <td>13&nbsp;200 paths/s</td>
       <td>1&nbsp;597 paths/s <em>(burst)</em></td>
-      <td>&mdash;</td>
-      <td>&mdash;</td>
+      <td><strong>5&nbsp;490 paths/s</strong> <em>(Apr 30, SwiftShader &sect;)</em></td>
+      <td><strong>2&nbsp;950 paths/s</strong> <em>(10-frame avg, PHB_MODE=4)</em></td>
+      <td><span class="badge badge-yellow">0.29&times;</span> <small>(NemaVG ~3.5&times; slower)</small></td>
+      <td><span class="badge badge-yellow">0.42&times;</span> <small>(SW WebGL bottleneck)</small></td>
     </tr>
     <tr>
-      <td>Path Halo (haloPath_e)</td>
-      <td>&mdash;</td>
+      <td>Path Halo &mdash; <code>haloPath_e</code><br><small>e-glyph halo, NonZero, 59 cmds (most complex)</small></td>
+      <td>6&nbsp;000 paths/s</td>
       <td>969 paths/s <em>(burst)</em></td>
+      <td><strong>6&nbsp;062 paths/s</strong> <em>(Apr 30, SwiftShader &sect;)</em></td>
+      <td><strong>1&nbsp;005 paths/s</strong> <em>(10-frame avg, PHB_MODE=5)</em></td>
+      <td><span class="badge badge-yellow">0.16&times;</span> <small>(NemaVG ~6&times; slower)</small></td>
+      <td><span class="badge badge-green">1.01&times;</span> <small>(web matches Garmin ref!)</small></td>
+    </tr>
+    <tr style="background:#1a1a2a;">
+      <td><em>Combined: <code>haloPath_e + path_e</code></em><br><small>Demo 34 visual workload, 2 paths/iter</small></td>
+      <td>&mdash;</td>
+      <td>&mdash;</td>
+      <td><strong>~8&nbsp;375 paths/s</strong> <em>(prior hardware GPU run)</em></td>
+      <td><strong>2&nbsp;575 paths/s</strong> <em>(10-frame avg, PHB_MODE=0)</em></td>
       <td>&mdash;</td>
       <td>&mdash;</td>
     </tr>
@@ -855,10 +879,43 @@ mdemo_minnie_end_frame();</code></pre>
 </table>
 
 <div class="note-info">
-  The web path is <em>not</em> a fair apples-to-apples comparison with the MCU &mdash; the
-  browser runs on a desktop GPU and can burn far more fill-rate per frame. The web
-  numbers are useful for validating the portable MinnieVG tessellation &amp; ShaderVG
-  fragment pipeline, and for regression-checking demo behavior between commits.
+  <strong>&#9888; About the 22&nbsp;500 paths/s Garmin ref for <code>pathH</code>:</strong>
+  <code>pathH</code> is the simplest path (12 line segments, EvenOdd fill), yet the EVB
+  measures only 1&nbsp;702 paths/s &mdash; a 13&times; gap vs the Garmin reference that does
+  not appear in the other two benchmarks (where EVB <em>exceeds</em> the Garmin ref).
+  The most likely explanation is a measurement methodology difference: Garmin&rsquo;s reference
+  may time only the <code>nema_vg_draw_path()</code> GPU call on a pre-created path,
+  while our implementation times <code>nema_vg_path_create()</code> +
+  <code>nema_vg_path_set_shape()</code> + draw + <code>nema_vg_path_destroy()</code>
+  per iteration. For a 12-line path, the allocation/setup overhead dominates the draw time.
+  This needs verification against the Garmin source. The same methodology gap likely explains
+  why all four path halo EVB results fall 6&ndash;13&times; below their Garmin refs.
+</div>
+
+<div class="note-info">
+  <strong>&sect; Web column &mdash; SwiftShader (software WebGL):</strong>
+  Web per-path numbers were captured via <strong>headless Puppeteer + Chrome</strong>
+  using <code>--use-angle=swiftshader</code>, routing WebGL through Chrome&rsquo;s built-in
+  software rasterizer. Results are CPU-bound like SDL2 PC but inside a browser runtime.
+  On real hardware-GPU Chrome, simple paths (<code>pathH</code>, <code>haloPathH</code>)
+  would be faster; complex paths (<code>haloPath_e</code>) are CPU-tessellation-bound and
+  should remain similar. To capture hardware-GPU numbers, open
+  <code>minnie_demo_34_path_halo_bench.html</code> in Chrome (non-headless) and read the
+  <code>[PHB]</code> line in DevTools Console.
+</div>
+
+<div class="note-info">
+  <strong>NemaVG vs Web interpretation:</strong>
+  NemaVG (Apollo5 fixed-function GPU) wins only for <strong>Line Draw</strong> (10.9&times;).
+  For all path halo benchmarks, the EVB NemaVG is 3&ndash;17&times; slower than MinnieVG+ShaderVG
+  (even on software WebGL). Simple paths (<code>pathH</code>, <code>haloPathH</code>) already
+  exceed the Garmin reference in headless SwiftShader. The most complex path
+  (<code>haloPath_e</code>, 59 cmds NonZero) is CPU-tessellation-bound: web &asymp; Garmin
+  ref exactly (1.01&times;), while NemaVG EVB is 6&times; slower due to per-iteration path
+  creation overhead.
+  <br><br>
+  SDL2 PC: CPU-only software rasterization, timed with <code>QueryPerformanceCounter</code>
+  (Apr 30 2026).
 </div>
 
 <h3>EVB optimization multipliers (gradient_fill_bench, measured)</h3>
@@ -962,7 +1019,7 @@ mdemo_minnie_end_frame();</code></pre>
 
 <footer>
   Garmin VG Benchmarks &mdash; Apollo5 NemaVG &amp; MinnieVG Web Ports
-  &nbsp;&middot;&nbsp; generated April 23, 2026
+  &nbsp;&middot;&nbsp; generated April 30, 2026
 </footer>
 
 </div>
